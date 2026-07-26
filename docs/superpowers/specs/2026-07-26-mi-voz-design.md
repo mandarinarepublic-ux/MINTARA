@@ -30,9 +30,9 @@ Producto comercial nuevo, independiente de Mandarina, IND y La Mata.
    y queda guardada como su **voz master**.
 5. **Arma su audio.** Elige fondo, qué tan presente está ese fondo frente a la voz, y cuánto
    silencio queda entre frase y frase. Todo suena **al instante** mientras mueve los controles.
-6. **Escucha dentro de la app**, en repetición si quiere, y puede guardarlo para usarlo **sin
-   internet**. El audio nunca sale de la app: no hay archivo que se pueda exportar, mandar por
-   WhatsApp ni pasar a otro dispositivo fuera de su cuenta.
+6. **Escucha dentro de la app**, en repetición si quiere. En el plan pago puede además guardarlo
+   para usarlo **sin internet**. El audio nunca sale de la app: no hay archivo que se pueda
+   exportar, mandar por WhatsApp ni pasar a otro dispositivo fuera de su cuenta.
 7. **Vuelve cuando quiera** y arma audios nuevos con la misma voz master: otro fondo, otro ritmo,
    otro orden de frases. Sin volver a grabar y sin volver a pagar el pulido.
 
