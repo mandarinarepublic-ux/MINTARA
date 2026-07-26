@@ -1,4 +1,4 @@
-# mi-voz
+# MINTARA
 
 Afirmaciones con la voz de la propia persona, sobre un fondo de lluvia, río o mar.
 

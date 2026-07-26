@@ -10,8 +10,8 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "mi-voz",
-    short_name: "mi-voz",
+    name: "MINTARA",
+    short_name: "MINTARA",
     description: "Tus afirmaciones, con tu propia voz.",
     start_url: "/estudio",
     display: "standalone",

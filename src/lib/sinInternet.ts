@@ -13,7 +13,7 @@ import { rutaDeFondo } from "./audio/fondos.ts";
  * separadas para poder probarlas sin navegador.
  */
 export function nombreDeCache(grabacionId: string): string {
-  return `mi-voz-${grabacionId}`;
+  return `MINTARA-${grabacionId}`;
 }
 
 export function urlsAGuardar(vozUrl: string, fondos: string[]): string[] {

@@ -8,7 +8,7 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "mi-voz — tus afirmaciones con tu propia voz",
+  title: "MINTARA — tus afirmaciones con tu propia voz",
   description:
     "Graba tu voz leyendo afirmaciones y escúchalas sobre lluvia, río o mar.",
 };

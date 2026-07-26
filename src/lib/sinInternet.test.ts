@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { nombreDeCache, urlsAGuardar } from "./sinInternet.ts";
 
 test("cada grabación tiene su propio cajón", () => {
-  assert.equal(nombreDeCache("abc-123"), "mi-voz-abc-123");
+  assert.equal(nombreDeCache("abc-123"), "MINTARA-abc-123");
   assert.notEqual(nombreDeCache("abc-123"), nombreDeCache("abc-124"));
 });
 
