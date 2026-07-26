@@ -82,7 +82,14 @@ export class Reproductor {
    * automática, que deja toda grabación al mismo nivel sin importar qué tan
    * cerca del micrófono se habló.
    */
-  async renderizarVoz(plan: PlanDeMezcla, conEstudio = true): Promise<Blob> {
+  async renderizarVoz(
+    plan: PlanDeMezcla,
+    conEstudio = true,
+    // Solo se usa donde el navegador no deja cambiar el volumen en vivo
+    // (Safari en iPhone). En el resto vale 1 y manda el control del
+    // reproductor, que responde al instante.
+    volumen = 1,
+  ): Promise<Blob> {
     if (!this.voz) throw new Error("Falta cargar la voz");
 
     const hz = this.voz.sampleRate;
@@ -92,20 +99,20 @@ export class Reproductor {
       hz,
     );
 
+    const total = this.gananciaVoz * volumen;
+
     // Con estudio, la voz pasa además por el filtrado y la compresión.
-    const cadena = conEstudio
-      ? crearCadenaEstudio(offline, this.gananciaVoz)
-      : null;
+    const cadena = conEstudio ? crearCadenaEstudio(offline, total) : null;
     let entrada: AudioNode;
 
     if (cadena) {
       cadena.salida.connect(offline.destination);
       entrada = cadena.entrada;
     } else {
-      const volumen = offline.createGain();
-      volumen.gain.value = this.gananciaVoz;
-      volumen.connect(offline.destination);
-      entrada = volumen;
+      const nodo = offline.createGain();
+      nodo.gain.value = total;
+      nodo.connect(offline.destination);
+      entrada = nodo;
     }
 
     for (const bloque of plan.voz) {
@@ -125,7 +132,7 @@ export class Reproductor {
    * Se renderiza en vez de reproducir el mp3 en bucle para que ambas pistas
    * duren exactamente lo mismo y no se vayan separando vuelta tras vuelta.
    */
-  async renderizarFondo(plan: PlanDeMezcla): Promise<Blob> {
+  async renderizarFondo(plan: PlanDeMezcla, volumen = 1): Promise<Blob> {
     if (!this.fondo) throw new Error("Falta cargar el fondo");
 
     const hz = this.fondo.sampleRate;
@@ -135,20 +142,20 @@ export class Reproductor {
       hz,
     );
 
-    const volumen = offline.createGain();
-    volumen.connect(offline.destination);
-    volumen.gain.setValueAtTime(0, 0);
-    volumen.gain.linearRampToValueAtTime(1, plan.fondo.entrada);
-    volumen.gain.setValueAtTime(
-      1,
+    const nodo = offline.createGain();
+    nodo.connect(offline.destination);
+    nodo.gain.setValueAtTime(0, 0);
+    nodo.gain.linearRampToValueAtTime(volumen, plan.fondo.entrada);
+    nodo.gain.setValueAtTime(
+      volumen,
       Math.max(plan.fondo.entrada, plan.duracionTotal - plan.fondo.salida),
     );
-    volumen.gain.linearRampToValueAtTime(0, plan.duracionTotal);
+    nodo.gain.linearRampToValueAtTime(0, plan.duracionTotal);
 
     const fuente = offline.createBufferSource();
     fuente.buffer = this.fondo;
     fuente.loop = true; // el archivo es más corto que la pieza
-    fuente.connect(volumen);
+    fuente.connect(nodo);
     fuente.start(0, 0, plan.duracionTotal);
 
     return this.aBlob(await offline.startRendering());

@@ -11,6 +11,21 @@ import { guardarCortes } from "./acciones";
 const SILENCIO =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
+/**
+ * ¿Este navegador deja cambiar el volumen por software?
+ *
+ * En Safari de iPhone NO: `volume` es de solo lectura porque Apple reserva
+ * el volumen a los botones físicos. Escribirlo no da error, simplemente no
+ * pasa nada — por eso hay que comprobarlo leyendo de vuelta.
+ */
+function permiteCambiarVolumen(el: HTMLAudioElement): boolean {
+  const antes = el.volume;
+  el.volume = 0.42;
+  const funciona = Math.abs(el.volume - 0.42) < 0.01;
+  el.volume = antes;
+  return funciona;
+}
+
 export function Mezclador({
   grabacionId,
   titulo,
@@ -46,6 +61,8 @@ export function Mezclador({
   const [guardado, setGuardado] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [armado, setArmado] = useState(false);
+  /** null mientras no se ha comprobado. */
+  const [volumenEnVivo, setVolumenEnVivo] = useState<boolean | null>(null);
 
   useEffect(() => {
     const r = new Reproductor();
@@ -65,6 +82,10 @@ export function Mezclador({
         setCargando(false);
       });
 
+    if (pistaVoz.current) {
+      setVolumenEnVivo(permiteCambiarVolumen(pistaVoz.current));
+    }
+
     if ("serviceWorker" in navigator) {
       void navigator.serviceWorker.register("/sw.js");
     }
@@ -78,15 +99,20 @@ export function Mezclador({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Los volúmenes son los del propio reproductor: cambian al instante, sin
-  // rearmar nada. Esa es toda la razón de tener dos pistas separadas.
+  // Donde se puede, los volúmenes son los del propio reproductor: cambian al
+  // instante. Donde no (iPhone), van horneados en la pista y se aplican en
+  // el rearmado de más abajo.
   useEffect(() => {
-    if (pistaVoz.current) pistaVoz.current.volume = Math.min(1, vozVolumen);
-  }, [vozVolumen]);
+    if (volumenEnVivo && pistaVoz.current) {
+      pistaVoz.current.volume = Math.min(1, vozVolumen);
+    }
+  }, [vozVolumen, volumenEnVivo]);
 
   useEffect(() => {
-    if (pistaFondo.current) pistaFondo.current.volume = Math.min(1, fondoVolumen);
-  }, [fondoVolumen]);
+    if (volumenEnVivo && pistaFondo.current) {
+      pistaFondo.current.volume = Math.min(1, fondoVolumen);
+    }
+  }, [fondoVolumen, volumenEnVivo]);
 
   const planActual = useCallback(
     () =>
@@ -103,9 +129,12 @@ export function Mezclador({
   /** Arma ambas pistas. Solo hace falta al cambiar pausas, estudio o ambiente. */
   async function armar(): Promise<void> {
     const plan = planActual();
+    // Si el navegador no deja tocar el volumen en vivo, va horneado aquí.
+    const vVoz = volumenEnVivo ? 1 : vozVolumen;
+    const vFondo = volumenEnVivo ? 1 : fondoVolumen;
     const [voz, ambiente] = await Promise.all([
-      reproductor.current!.renderizarVoz(plan, estudio),
-      reproductor.current!.renderizarFondo(plan),
+      reproductor.current!.renderizarVoz(plan, estudio, vVoz),
+      reproductor.current!.renderizarFondo(plan, vFondo),
     ]);
 
     if (urlVoz.current) URL.revokeObjectURL(urlVoz.current);
@@ -119,8 +148,10 @@ export function Mezclador({
     f.src = urlFondo.current;
     v.loop = true;
     f.loop = true;
-    v.volume = Math.min(1, vozVolumen);
-    f.volume = Math.min(1, fondoVolumen);
+    if (volumenEnVivo) {
+      v.volume = Math.min(1, vozVolumen);
+      f.volume = Math.min(1, fondoVolumen);
+    }
     setArmado(true);
   }
 
@@ -204,8 +235,10 @@ export function Mezclador({
     }, 400);
 
     return () => clearTimeout(temporizador);
+    // Los volúmenes solo entran aquí donde no se pueden cambiar en vivo: en
+    // iPhone van dentro de la pista, así que moverlos obliga a rehacerla.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pausa, estudio]);
+  }, [pausa, estudio, volumenEnVivo ? null : vozVolumen, volumenEnVivo ? null : fondoVolumen]);
 
   async function cambiarFondo(id: string) {
     setFondo(id);
@@ -294,7 +327,7 @@ export function Mezclador({
         </div>
 
         {preparando && (
-          <p className="text-[13px] text-menta-400">Preparando tu audio…</p>
+          <p className="text-[13px] text-menta-400">Aplicando tus cambios…</p>
         )}
         {sonando && !preparando && (
           <p className="text-[13px] text-lavanda-100/60">
