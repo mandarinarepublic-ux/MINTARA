@@ -60,6 +60,9 @@ export function Mezclador({
   const [guardado, setGuardado] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [armado, setArmado] = useState(false);
+  /** Con qué volúmenes se armó la pista que está sonando ahora. */
+  const [vozArmada, setVozArmada] = useState(0);
+  const [fondoArmado, setFondoArmado] = useState(0);
 
   useEffect(() => {
     const r = new Reproductor();
@@ -80,7 +83,9 @@ export function Mezclador({
       });
 
     if ("serviceWorker" in navigator) {
-      void navigator.serviceWorker.register("/sw.js");
+      // update() fuerza a comprobar si hay versión nueva: sin esto, un
+      // service worker viejo puede quedarse servido durante días.
+      void navigator.serviceWorker.register("/sw.js").then((r) => r.update());
     }
     void estaGuardado(grabacionId).then(setGuardado);
 
@@ -123,6 +128,8 @@ export function Mezclador({
     f.src = urlFondo.current;
     v.loop = true;
     f.loop = true;
+    setVozArmada(vozVolumen);
+    setFondoArmado(fondoVolumen);
     setArmado(true);
   }
 
@@ -439,6 +446,17 @@ export function Mezclador({
 
       <p className="text-center text-xs text-lavanda-100/50">
         Solo tú puedes oír este audio.
+      </p>
+
+      {/*
+        Marcador de diagnóstico. Dice qué versión del código está corriendo
+        este teléfono y con qué volumen se armó la pista que suena ahora
+        mismo. Si el número de abajo no coincide con lo que muestran los
+        controles, el problema es de caché y no del audio.
+      */}
+      <p className="mono text-center text-[10px] text-lavanda-100/30">
+        {process.env.NEXT_PUBLIC_VERSION} · pista armada con voz{" "}
+        {Math.round(vozArmada * 100)}% · fondo {Math.round(fondoArmado * 100)}%
       </p>
     </div>
   );
