@@ -8,6 +8,20 @@ Afirmaciones con la voz de la propia persona, sobre un fondo de lluvia, río o m
     cp .env.example .env.local   # llenar con las claves de mandarina-DATA
     npm run dev
 
+## Desplegar
+
+    npm run desplegar
+
+⚠️ **Usa siempre este comando, nunca `vercel --prod` a secas.** Los dominios de este proyecto
+no siguen solos al último despliegue: se quedan apuntando al anterior. El 26-jul eso hizo que
+seis correcciones seguidas no llegaran al teléfono y se perdió una tarde. El script despliega
+y reapunta los dominios en el mismo paso.
+
+La app muestra abajo del todo, en la pantalla del audio, el commit que está corriendo. Ante
+cualquier "no me funciona", lo primero es comparar ese número con `git rev-parse --short=7 HEAD`.
+
+**URL estable: https://mintara-app.vercel.app**
+
 ## Pruebas
 
     npm test

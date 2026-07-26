@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test \"src/**/*.test.ts\""
+    "test": "node --test \"src/**/*.test.ts\"",
+    "desplegar": "bash scripts/desplegar.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
