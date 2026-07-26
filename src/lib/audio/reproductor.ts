@@ -2,20 +2,24 @@
 import { construirPlan, type PlanDeMezcla, type Frase } from "./plan";
 import { calcularEnergia, detectarFrases } from "./frases";
 import { calcularGananciaNormalizacion, crearCadenaEstudio } from "./vozEstudio";
+import { codificarWav } from "./wav";
 
 /**
- * Ejecuta un plan de mezcla con Web Audio.
+ * Arma la pieza completa a partir del plan de mezcla.
  *
- * No genera archivos: programa la voz y el fondo en el reloj del navegador
- * y los suena. Por eso cambiar de fondo o mover el volumen es instantáneo,
- * y por eso no existe ningún audio que se pueda extraer de la app.
+ * **Por qué no suena en vivo:** el producto es para escuchar antes de dormir,
+ * y el audio generado en vivo por el navegador se corta apenas se bloquea el
+ * teléfono. Al entregar una pista terminada, el sistema operativo la trata
+ * como cualquier canción: sigue sonando con la pantalla apagada y aparece en
+ * los controles de la pantalla de bloqueo.
+ *
+ * La pista se arma en memoria y se entrega como un blob temporal. Sigue sin
+ * existir ningún archivo que se pueda sacar de la app.
  */
 export class Reproductor {
   private contexto: AudioContext | null = null;
   private voz: AudioBuffer | null = null;
   private fondo: AudioBuffer | null = null;
-  private fuentes: AudioBufferSourceNode[] = [];
-  private temporizador: ReturnType<typeof setTimeout> | null = null;
   /** Cuánto hay que subir o bajar esta voz para que quede al nivel de todas. */
   private gananciaVoz = 1;
 
@@ -56,7 +60,7 @@ export class Reproductor {
     return this.voz !== null && this.fondo !== null;
   }
 
-  /** Corta la voz master en frases mirando su energía. */
+  /** Corta la voz en frases mirando su energía. */
   analizarFrases(): Frase[] {
     if (!this.voz) return [];
     const canal = this.voz.getChannelData(0);
@@ -65,72 +69,56 @@ export class Reproductor {
     return detectarFrases(energia, 0.02);
   }
 
-  reproducir(plan: PlanDeMezcla, enBucle: boolean, conEstudio = true): void {
-    if (!this.contexto || !this.voz || !this.fondo) return;
-    this.detener();
-    // iOS arranca el contexto suspendido: sin esto, el primer toque no suena.
-    void this.contexto.resume();
+  /**
+   * Renderiza la pieza y la devuelve lista para reproducir.
+   *
+   * Tarda un momento (bastante menos que la duración de la pieza), y por eso
+   * la pantalla debe avisar que está preparando.
+   */
+  async renderizar(plan: PlanDeMezcla, conEstudio = true): Promise<Blob> {
+    if (!this.voz || !this.fondo) {
+      throw new Error("Falta cargar la voz o el fondo antes de renderizar");
+    }
 
-    const ahora = this.contexto.currentTime + 0.1;
-
-    const gananciaFondo = this.contexto.createGain();
-    gananciaFondo.connect(this.contexto.destination);
-    gananciaFondo.gain.setValueAtTime(0, ahora);
-    gananciaFondo.gain.linearRampToValueAtTime(
-      plan.fondo.ganancia,
-      ahora + plan.fondo.entrada,
+    const hz = this.voz.sampleRate;
+    const offline = new OfflineAudioContext(
+      1,
+      Math.ceil(plan.duracionTotal * hz),
+      hz,
     );
+
+    const gananciaFondo = offline.createGain();
+    gananciaFondo.connect(offline.destination);
+    gananciaFondo.gain.setValueAtTime(0, 0);
+    gananciaFondo.gain.linearRampToValueAtTime(plan.fondo.ganancia, plan.fondo.entrada);
     gananciaFondo.gain.setValueAtTime(
       plan.fondo.ganancia,
-      ahora + plan.duracionTotal - plan.fondo.salida,
+      Math.max(plan.fondo.entrada, plan.duracionTotal - plan.fondo.salida),
     );
-    gananciaFondo.gain.linearRampToValueAtTime(0, ahora + plan.duracionTotal);
+    gananciaFondo.gain.linearRampToValueAtTime(0, plan.duracionTotal);
 
-    const fuenteFondo = this.contexto.createBufferSource();
+    const fuenteFondo = offline.createBufferSource();
     fuenteFondo.buffer = this.fondo;
-    fuenteFondo.loop = true; // el fondo puede ser más corto que la pieza
+    fuenteFondo.loop = true; // el fondo es más corto que la pieza
     fuenteFondo.connect(gananciaFondo);
-    fuenteFondo.start(ahora, 0, plan.duracionTotal);
-    this.fuentes.push(fuenteFondo);
+    fuenteFondo.start(0, 0, plan.duracionTotal);
 
     // Con estudio, todas las frases pasan por la misma cadena; sin él, van
-    // directo al destino tal como se grabaron. Es lo que permite comparar.
+    // directo al destino tal como se grabaron.
     const destinoVoz = conEstudio
-      ? crearCadenaEstudio(this.contexto, this.gananciaVoz)
+      ? crearCadenaEstudio(offline, this.gananciaVoz)
       : null;
-    destinoVoz?.salida.connect(this.contexto.destination);
+    destinoVoz?.salida.connect(offline.destination);
 
     for (const bloque of plan.voz) {
-      const fuente = this.contexto.createBufferSource();
+      const fuente = offline.createBufferSource();
       fuente.buffer = this.voz;
-      fuente.connect(destinoVoz ? destinoVoz.entrada : this.contexto.destination);
-      fuente.start(
-        ahora + bloque.entraEn,
-        bloque.desde,
-        bloque.hasta - bloque.desde,
-      );
-      this.fuentes.push(fuente);
+      fuente.connect(destinoVoz ? destinoVoz.entrada : offline.destination);
+      fuente.start(bloque.entraEn, bloque.desde, bloque.hasta - bloque.desde);
     }
 
-    if (enBucle) {
-      this.temporizador = setTimeout(
-        () => this.reproducir(plan, true, conEstudio),
-        plan.duracionTotal * 1000,
-      );
-    }
-  }
-
-  detener(): void {
-    if (this.temporizador) clearTimeout(this.temporizador);
-    this.temporizador = null;
-    this.fuentes.forEach((f) => {
-      try {
-        f.stop();
-      } catch {
-        // Ya había terminado sola; no es un error.
-      }
-    });
-    this.fuentes = [];
+    const mezcla = await offline.startRendering();
+    return new Blob([codificarWav(mezcla)], { type: "audio/wav" });
   }
 }
 

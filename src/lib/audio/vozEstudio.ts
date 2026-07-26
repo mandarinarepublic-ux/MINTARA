@@ -52,7 +52,9 @@ export type CadenaEstudio = { entrada: AudioNode; salida: AudioNode };
  * de voz hablada, no perillas para que el usuario adivine.
  */
 export function crearCadenaEstudio(
-  contexto: AudioContext,
+  // BaseAudioContext y no AudioContext: la misma cadena se usa al sonar en
+  // vivo y al armar la pieza final fuera de tiempo real.
+  contexto: BaseAudioContext,
   ganancia: number,
 ): CadenaEstudio {
   const graves = contexto.createBiquadFilter();

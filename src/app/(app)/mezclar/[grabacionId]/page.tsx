@@ -18,11 +18,16 @@ export default async function Mezclar({
 
   const { data: grabacion } = await supabase
     .from("grabaciones")
-    .select("id, ruta_master, cortes")
+    .select("id, ruta_master, cortes, textos(nombre)")
     .eq("id", grabacionId)
     .single();
 
   if (!grabacion?.ruta_master) notFound();
+
+  // El nombre del paquete es lo que la persona verá en la pantalla de
+  // bloqueo de su teléfono mientras suena.
+  const titulo =
+    (grabacion.textos as { nombre?: string } | null)?.nombre ?? "Mi audio";
 
   const { data: perfil } = await supabase
     .from("perfiles")
@@ -61,6 +66,7 @@ export default async function Mezclar({
       <div className="mt-7">
         <Mezclador
           grabacionId={grabacion.id}
+          titulo={titulo}
           vozUrl={firmada.signedUrl}
           cortesGuardados={grabacion.cortes}
           fondosPermitidos={fondosPermitidos(plan)}
