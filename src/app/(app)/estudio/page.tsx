@@ -22,8 +22,11 @@ export default function Estudio() {
   }
 
   return (
-    <main className="mx-auto max-w-lg px-6 py-10">
-      <h1 className="text-2xl font-semibold">¿Qué quieres decirte?</h1>
+    <main className="mx-auto w-full max-w-[402px] px-[22px] py-10 md:max-w-[520px]">
+      <p className="etiqueta text-lavanda-100/50">Paso 1 de 2</p>
+      <h1 className="display mt-2 text-[28px] leading-tight text-crema-50">
+        ¿Qué quieres decirte?
+      </h1>
 
       <div className="mt-6 flex flex-wrap gap-2">
         {PAQUETES.map((p) => (
@@ -31,10 +34,10 @@ export default function Estudio() {
             key={p.id}
             type="button"
             onClick={() => elegir(p.id)}
-            className={`rounded-full border px-4 py-2 text-sm ${
+            className={`rounded-full border px-4 py-2 text-[13px] transition active:scale-[0.97] ${
               p.id === paquete.id
-                ? "border-neutral-900 bg-neutral-900 text-white"
-                : "border-neutral-300"
+                ? "border-transparent bg-lavanda-100 text-violeta-600"
+                : "border-lavanda-100/20 text-lavanda-100/80 hover:border-rosa-400 hover:text-rosa-400"
             }`}
           >
             {p.nombre}
@@ -42,7 +45,7 @@ export default function Estudio() {
         ))}
       </div>
 
-      <p className="mt-3 text-sm text-neutral-500">{paquete.descripcion}</p>
+      <p className="mt-3 text-[13px] text-lavanda-100/60">{paquete.descripcion}</p>
 
       <form action={accion} className="mt-6 flex flex-col gap-3">
         <input type="hidden" name="nombre" value={paquete.nombre} />
@@ -54,22 +57,24 @@ export default function Estudio() {
             onChange={(e) => cambiar(i, e.target.value)}
             rows={2}
             maxLength={120}
-            className="rounded-xl border border-neutral-300 px-4 py-3"
+            className="display resize-none rounded-[18px] border border-lavanda-100/15 bg-white/5 px-4 py-3.5 text-[17px] leading-relaxed text-crema-50 focus:border-rosa-400 focus:outline-none"
           />
         ))}
+
         <button
           type="button"
           onClick={() => setFrases((a) => (a.length < 12 ? [...a, ""] : a))}
-          className="self-start text-sm text-neutral-500 underline"
+          className="self-start text-[13px] text-rosa-400 hover:underline"
         >
           Agregar una frase mía
         </button>
 
-        {estado.error && <p className="text-sm text-red-600">{estado.error}</p>}
+        {estado.error && <p className="text-sm text-rosa-400">{estado.error}</p>}
+
         <button
           type="submit"
           disabled={pendiente}
-          className="mt-4 rounded-xl bg-neutral-900 px-4 py-3 text-white disabled:opacity-50"
+          className="mt-4 rounded-full bg-oro-500 px-6 py-3.5 font-semibold text-violeta-600 transition hover:bg-oro-400 active:scale-[0.97] disabled:opacity-50"
         >
           {pendiente ? "Guardando…" : "Ya está, vamos a grabar"}
         </button>

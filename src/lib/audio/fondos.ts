@@ -1,18 +1,16 @@
 /**
- * Catálogo de fondos.
+ * Catálogo de ambientes.
  *
- * Los archivos viven en `public/fondos/` y se sirven estáticos, sin pasar
- * por el proxy (ver el matcher en src/proxy.ts): son varios megas que se
- * piden muchas veces y no necesitan sesión.
+ * Son tres, como manda el diseño, y cada uno tiene un para qué: no son
+ * "sonidos bonitos", son momentos del día. Esa promesa aparece en el
+ * landing y en la pantalla de mezcla.
  */
-export type Fondo = { id: string; nombre: string };
+export type Fondo = { id: string; nombre: string; para: string };
 
 export const FONDOS: Fondo[] = [
-  { id: "lluvia", nombre: "Lluvia" },
-  { id: "rio", nombre: "Río" },
-  { id: "mar", nombre: "Mar" },
-  { id: "bosque", nombre: "Bosque" },
-  { id: "tormenta", nombre: "Tormenta suave" },
+  { id: "lluvia", nombre: "Lluvia", para: "Para dormir y soltar el día" },
+  { id: "rio", nombre: "Río", para: "Para concentrarte y avanzar" },
+  { id: "mar", nombre: "Mar", para: "Para empezar la mañana" },
 ];
 
 export function rutaDeFondo(id: string): string {

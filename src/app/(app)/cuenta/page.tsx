@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import { ocultarCelular } from "@/lib/telefono";
-import { LIMITES, type Plan } from "@/lib/planes";
+import { LIMITES, PRECIOS, type Plan } from "@/lib/planes";
 import { pedirDesbloqueo, borrarTodo } from "./acciones";
 
 export default async function Cuenta() {
@@ -25,33 +26,56 @@ export default async function Cuenta() {
   const plan = (perfil?.plan ?? "gratis") as Plan;
 
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-8 px-6 py-10">
-      <div>
-        <h1 className="text-2xl font-semibold">Tu cuenta</h1>
-        <p className="mt-2 text-neutral-500">
+    <main className="mx-auto flex w-full max-w-[402px] flex-col gap-8 px-[22px] py-10 md:max-w-[520px]">
+      <Link href="/estudio" className="text-[15px] text-lavanda-100/70">
+        ← Volver
+      </Link>
+
+      <h1 className="display text-[28px] text-crema-50">Perfil</h1>
+
+      <div className="rounded-[20px] border border-lavanda-100/15 bg-white/5 p-[18px]">
+        <p className="text-[17px] font-semibold text-crema-50">
+          {plan === "premium" ? "Premium" : "Plan gratis"}
+        </p>
+        <p className="mono mt-1 text-xs text-lavanda-100/60">
           {ocultarCelular(perfil?.celular ?? "")}
         </p>
-      </div>
-
-      <div className="rounded-xl border border-neutral-200 p-4">
-        <p className="font-medium">Plan {plan}</p>
-        <p className="mt-1 text-sm text-neutral-500">
-          {count ?? 0} de {LIMITES[plan].grabaciones} grabaciones usadas
+        <p className="mt-3 text-[13px] text-lavanda-100/70">
+          {count ?? 0} de {LIMITES[plan].audios} audios ·{" "}
+          {LIMITES[plan].segundos / 60} min por grabación
         </p>
+
         {plan === "gratis" && (
-          <form action={pedirDesbloqueo} className="mt-4">
-            <button className="rounded-xl bg-neutral-900 px-4 py-3 text-white">
-              Quiero más grabaciones
+          <form action={pedirDesbloqueo} className="mt-5 flex flex-col gap-2">
+            <button className="rounded-full bg-oro-500 px-6 py-3.5 font-semibold text-violeta-600 transition hover:bg-oro-400 active:scale-[0.97]">
+              Pasar a Premium
             </button>
+            <p className="text-center text-xs text-lavanda-100/55">
+              {PRECIOS.mensual.etiqueta} · {PRECIOS.anual.etiqueta}
+            </p>
           </form>
         )}
       </div>
 
-      <form action={borrarTodo}>
-        <button className="text-sm text-red-600 underline">
-          Borrar mi voz y mi cuenta para siempre
-        </button>
-      </form>
+      <div className="rounded-[18px] border border-menta-400/30 bg-menta-400/10 p-5">
+        <p className="etiqueta text-menta-400">Tu voz</p>
+        <p className="mt-2 text-sm leading-relaxed text-lavanda-100/80">
+          Tus grabaciones son solo tuyas. No se comparten, no se usan para nada
+          más y nadie de nuestro equipo las escucha.
+        </p>
+        <form action={borrarTodo} className="mt-4">
+          <button className="text-[13px] text-menta-400 hover:underline">
+            Borrar mi voz y mi cuenta para siempre
+          </button>
+        </form>
+      </div>
+
+      <Link
+        href="/privacidad"
+        className="text-center text-sm text-lavanda-100/60 hover:text-crema-50"
+      >
+        Aviso de privacidad
+      </Link>
     </main>
   );
 }

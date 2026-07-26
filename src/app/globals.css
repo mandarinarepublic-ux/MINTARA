@@ -1,26 +1,102 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/**
+ * Identidad Míntara. Los valores salen de docs/diseno/handoff-mintara.md
+ * (sección Design Tokens) y NO se inventan aquí: si algo no está en esa
+ * guía, se pregunta antes de agregarlo.
+ *
+ * La marca es nocturna: el tema es oscuro siempre, no sigue la preferencia
+ * del sistema. Un Míntara en blanco sería otra marca.
+ */
+@theme {
+  --color-violeta-900: #0e0819;
+  --color-violeta-800: #150c25;
+  --color-violeta-700: #1a0e2e;
+  --color-violeta-600: #2a1746;
+  --color-violeta-500: #6b3fa0;
+  --color-lila-400: #a26dbe;
+  --color-rosa-400: #d88bc8;
+  --color-menta-400: #7ed1c1;
+  --color-lavanda-100: #e6d6f5;
+  --color-crema-50: #fff4e6;
+  --color-oro-500: #d4af37;
+  --color-oro-400: #e3c158;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--fuente-display);
+  --font-sans: var(--fuente-cuerpo);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-violeta-700);
+  color: var(--color-crema-50);
+  font-family: var(--fuente-cuerpo), system-ui, sans-serif;
+}
+
+/* Titulares y cifras: siempre serif. */
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--fuente-display), Georgia, serif;
+  font-weight: 400;
+}
+
+/* Códigos, teléfono y cronómetro. */
+.mono {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* Tagline y labels: versalitas muy espaciadas. */
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-size: 11px;
+}
+
+.etiqueta {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+}
+
+/* Foco visible en todo lo interactivo: obligatorio según la guía. */
+:where(a, button, input, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-rosa-400);
+  outline-offset: 2px;
+}
+
+@keyframes mtPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(216, 139, 200, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 18px rgba(216, 139, 200, 0);
+  }
+}
+
+@keyframes mtFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.pulso {
+  animation: mtPulse 2.6s ease-in-out infinite;
+}
+
+.flotar {
+  animation: mtFloat 5s ease-in-out infinite;
+}
+
+/* Quien pidió menos movimiento no lo recibe. */
+@media (prefers-reduced-motion: reduce) {
+  .pulso,
+  .flotar {
+    animation: none;
+  }
 }

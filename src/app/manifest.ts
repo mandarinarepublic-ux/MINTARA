@@ -1,22 +1,38 @@
 import type { MetadataRoute } from "next";
 
 /**
- * Manifiesto para que se pueda instalar en el celular y funcione sin
- * internet.
+ * Manifiesto de la app instalable.
  *
- * PENDIENTE: falta el icono. Va aparte porque es una decisión de marca
- * (y hace falta el nombre comercial definitivo), no algo que se resuelva
- * con un cuadrado de color.
+ * Esto es lo que convierte a Míntara en una app de pantalla de inicio, y es
+ * también lo que Google Play va a necesitar el día que se publique: una PWA
+ * que cumple se sube a la tienda tal cual, sin envolverla en nada.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "MINTARA",
-    short_name: "MINTARA",
-    description: "Tus afirmaciones, con tu propia voz.",
+    name: "Míntara — tu voz, tus palabras, tu intención",
+    short_name: "Míntara",
+    description: "Tus afirmaciones, con tu propia voz, sobre lluvia, río o mar.",
     start_url: "/estudio",
+    scope: "/",
     display: "standalone",
-    background_color: "#0a0a0a",
-    theme_color: "#0a0a0a",
-    icons: [],
+    orientation: "portrait",
+    background_color: "#1A0E2E",
+    theme_color: "#1A0E2E",
+    lang: "es-EC",
+    categories: ["health", "lifestyle"],
+    icons: [
+      {
+        src: "/marca/mintara-icon.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/marca/mintara-icon.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+    ],
   };
 }
