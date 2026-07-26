@@ -11,6 +11,11 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    // El runner de pruebas de Node no resuelve imports sin extensión, así
+    // que los módulos que alcanzan las pruebas importan con ".ts". Sin esta
+    // opción, TypeScript rechaza esa extensión. Es seguro porque noEmit
+    // está activo: quien compila de verdad es Next.
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [

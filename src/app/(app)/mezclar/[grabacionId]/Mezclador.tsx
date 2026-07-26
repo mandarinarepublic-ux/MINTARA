@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Reproductor } from "@/lib/audio/reproductor";
 import { construirPlan, type Frase } from "@/lib/audio/plan";
 import { FONDOS, rutaDeFondo } from "@/lib/audio/fondos";
+import { guardarParaSinInternet, estaGuardado } from "@/lib/sinInternet";
+import { puedeUsarSinInternet, type Plan } from "@/lib/planes";
 import { guardarCortes } from "./acciones";
 
 export function Mezclador({
@@ -10,11 +12,15 @@ export function Mezclador({
   vozUrl,
   cortesGuardados,
   fondosPermitidos,
+  planUsuario,
 }: {
   grabacionId: string;
   vozUrl: string;
   cortesGuardados: Frase[] | null;
   fondosPermitidos: string[];
+  // Se llama planUsuario y no plan porque aquí `plan` ya es el plan de
+  // mezcla que devuelve construirPlan.
+  planUsuario: Plan;
 }) {
   const reproductor = useRef<Reproductor | null>(null);
   const [fondo, setFondo] = useState(fondosPermitidos[0] ?? "lluvia");
@@ -24,6 +30,8 @@ export function Mezclador({
   const [sonando, setSonando] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [guardado, setGuardado] = useState(false);
+  const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     const r = new Reproductor();
@@ -43,10 +51,26 @@ export function Mezclador({
         setCargando(false);
       });
 
+    if ("serviceWorker" in navigator) {
+      void navigator.serviceWorker.register("/sw.js");
+    }
+    void estaGuardado(grabacionId).then(setGuardado);
+
     return () => r.detener();
     // Solo al montar: el cambio de fondo se maneja aparte, sin recargar la voz.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function guardarEnElCelular() {
+    setGuardando(true);
+    try {
+      await guardarParaSinInternet(grabacionId, vozUrl, fondosPermitidos);
+      setGuardado(true);
+    } catch {
+      setError("No pudimos guardarlo en tu celular. Puede faltar espacio.");
+    }
+    setGuardando(false);
+  }
 
   async function cambiarFondo(id: string) {
     setFondo(id);
@@ -151,6 +175,20 @@ export function Mezclador({
       >
         {cargando ? "Preparando…" : sonando ? "Parar" : "Escuchar"}
       </button>
+
+      {puedeUsarSinInternet(planUsuario) && (
+        <button
+          onClick={guardarEnElCelular}
+          disabled={guardado || guardando || cargando}
+          className="rounded-xl border border-neutral-300 px-4 py-3 disabled:opacity-50"
+        >
+          {guardado
+            ? "Guardado en tu celular"
+            : guardando
+              ? "Guardando…"
+              : "Guardar para escuchar sin internet"}
+        </button>
+      )}
     </div>
   );
 }

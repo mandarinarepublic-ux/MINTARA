@@ -51,6 +51,7 @@ export default async function Mezclar({
           vozUrl={firmada.signedUrl}
           cortesGuardados={grabacion.cortes}
           fondosPermitidos={fondosPermitidos(plan)}
+          planUsuario={plan}
         />
       </div>
     </main>

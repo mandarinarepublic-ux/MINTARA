@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { supabaseServidor } from "@/lib/supabase/servidor";
+import { puedeGrabar, type Plan } from "@/lib/planes";
 
 const Entrada = z.object({
   nombre: z.string().trim().min(1).max(60),
@@ -33,6 +34,25 @@ export async function guardarTexto(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/ingresar");
+
+  // El tope se revisa aquí y no en la pantalla: una pantalla se puede
+  // saltar, una server action no.
+  const { data: perfil } = await supabase
+    .from("perfiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+
+  const { count } = await supabase
+    .from("grabaciones")
+    .select("id", { count: "exact", head: true })
+    .eq("perfil_id", user.id);
+
+  if (!puedeGrabar((perfil?.plan ?? "gratis") as Plan, count ?? 0)) {
+    return {
+      error: "Ya usaste tu grabación gratis. Desbloquea más desde tu cuenta.",
+    };
+  }
 
   const { data, error } = await supabase
     .from("textos")
