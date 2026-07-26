@@ -1,8 +1,27 @@
 # mi-voz — Diseño
 
 **Fecha:** 2026-07-26
-**Estado:** aprobado, listo para plan de implementación
-**Nombre provisional:** `mi-voz` (pendiente el nombre comercial definitivo)
+**Estado:** implementado y desplegado
+**Nombre:** **MINTARA** (el nombre `mi-voz` de este archivo es histórico)
+
+> ## ⚠️ Cambio de fondo tras la primera prueba real (26-jul, misma tarde)
+>
+> **Se eliminó el pulido con IA.** Se probó ElevenLabs Voice Isolator con una grabación real y
+> **no cambió nada audible**: ese servicio solo separa la voz del ruido de fondo, y no había
+> ruido que quitar (el navegador ya aplica supresión de ruido al capturar el micrófono).
+> Sonar "a estudio" no es quitar ruido: es emparejar volumen, comprimir dinámica y dar presencia.
+>
+> Eso ahora se hace **en el navegador, con Web Audio**, al reproducir (`src/lib/audio/vozEstudio.ts`).
+>
+> Consecuencias, todas favorables:
+> - **Costo variable: $0.** Ya no hay $0,06–0,66 por grabación. El producto no tiene costo por uso.
+> - **Nadie externo toca la voz.** Antes viajaba a un tercero; ahora no sale del almacenamiento
+>   propio. Es un argumento de venta, no solo una mejora técnica.
+> - **Desapareció la espera.** Ya no hay pantalla de pulido: se graba y se escucha.
+> - El plan gratis ya no está limitado por costo, sino solo por producto.
+>
+> Las secciones 6 y 8.1 de abajo conservan el análisis de costos del pulido como registro de
+> por qué se tomó esta decisión.
 
 ---
 

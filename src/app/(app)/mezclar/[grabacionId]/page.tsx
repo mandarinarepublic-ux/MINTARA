@@ -21,10 +21,7 @@ export default async function Mezclar({
     .eq("id", grabacionId)
     .single();
 
-  if (!grabacion) notFound();
-  if (grabacion.estado !== "lista" || !grabacion.ruta_master) {
-    redirect(`/grabar/esperando?grabacion=${grabacionId}`);
-  }
+  if (!grabacion?.ruta_master) notFound();
 
   const { data: perfil } = await supabase
     .from("perfiles")

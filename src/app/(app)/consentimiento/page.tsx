@@ -21,13 +21,10 @@ export default async function Consentimiento({
             nuestro equipo la escucha.
           </li>
           <li>
-            <strong>La limpiamos una vez.</strong> Pasa por un servicio externo
-            que le quita el ruido. Ese servicio no entrena programas con tu voz y
-            la borra al terminar.
-          </li>
-          <li>
-            <strong>Borramos la toma original.</strong> Apenas queda lista la
-            versión limpia, la grabación cruda se elimina.
+            <strong>No se la mandamos a nadie.</strong> El tratamiento que le da
+            presencia y empareja el volumen ocurre en tu propio teléfono, cuando
+            le das play. Tu voz no viaja a ninguna empresa ajena, ni siquiera
+            para procesarla.
           </li>
           <li>
             <strong>Nunca la compartimos ni la vendemos.</strong> A nadie, por

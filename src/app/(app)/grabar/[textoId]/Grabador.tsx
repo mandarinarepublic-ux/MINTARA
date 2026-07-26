@@ -62,7 +62,9 @@ export function Grabador({
     setEstado("subiendo");
     const supabase = supabaseNavegador();
     const blob = new Blob(trozos.current, { type: mime.current });
-    const ruta = `${perfilId}/${textoId}/cruda.${extensionDe(mime.current)}`;
+    // La toma ES la voz definitiva: no pasa por ningún servicio externo.
+    // El tratamiento de estudio se aplica al reproducir, en el navegador.
+    const ruta = `${perfilId}/${textoId}/voz.${extensionDe(mime.current)}`;
 
     const { error: fallo } = await supabase.storage
       .from("voces")
@@ -76,7 +78,12 @@ export function Grabador({
 
     const { data, error: fallo2 } = await supabase
       .from("grabaciones")
-      .insert({ perfil_id: perfilId, texto_id: textoId, estado: "cruda", ruta_cruda: ruta })
+      .insert({
+        perfil_id: perfilId,
+        texto_id: textoId,
+        estado: "lista",
+        ruta_master: ruta,
+      })
       .select("id")
       .single();
 
@@ -86,7 +93,7 @@ export function Grabador({
       return;
     }
 
-    router.push(`/grabar/esperando?grabacion=${data.id}`);
+    router.push(`/mezclar/${data.id}`);
   }
 
   return (

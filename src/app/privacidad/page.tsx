@@ -13,8 +13,8 @@ export default function Privacidad() {
       <h2 className="text-xl font-medium text-neutral-900">Qué guardamos</h2>
       <p>
         Tu número de celular, el texto de las afirmaciones que escribes o editas,
-        y la grabación de tu voz ya limpia. Nada más. No pedimos nombre, correo,
-        cédula ni dirección.
+        y la grabación de tu voz. Nada más. No pedimos nombre, correo, cédula ni
+        dirección.
       </p>
 
       <h2 className="text-xl font-medium text-neutral-900">Para qué</h2>
@@ -26,10 +26,11 @@ export default function Privacidad() {
 
       <h2 className="text-xl font-medium text-neutral-900">Quién más la toca</h2>
       <p>
-        Un solo servicio externo, el que limpia el audio, y solo durante ese
-        proceso. Lo elegimos exigiendo que no entrene modelos con lo que recibe y
-        que borre el archivo al terminar. La grabación original se elimina de
-        nuestros servidores apenas queda lista la versión limpia.
+        <strong>Nadie.</strong> Tu voz no se manda a ninguna empresa externa, ni
+        siquiera para procesarla. El tratamiento que le da presencia y empareja
+        el volumen ocurre dentro de tu propio teléfono, en el momento en que le
+        das play. Fuera de nuestro almacenamiento privado, tu voz no viaja a
+        ningún lado.
       </p>
 
       <h2 className="text-xl font-medium text-neutral-900">Cuánto tiempo</h2>
