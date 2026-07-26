@@ -33,6 +33,7 @@ export function Mezclador({
   const urlPista = useRef<string | null>(null);
 
   const [fondo, setFondo] = useState(fondosPermitidos[0] ?? "lluvia");
+  const [vozVolumen, setVozVolumen] = useState(1);
   const [ganancia, setGanancia] = useState(0.35);
   const [pausa, setPausa] = useState(2);
   const [estudio, setEstudio] = useState(true);
@@ -92,11 +93,12 @@ export function Mezclador({
     () =>
       construirPlan(frases, {
         fondo,
+        gananciaVoz: vozVolumen,
         gananciaFondo: ganancia,
         pausaSeg: pausa,
         orden: "original",
       }),
-    [frases, fondo, ganancia, pausa],
+    [frases, fondo, vozVolumen, ganancia, pausa],
   );
 
   async function armarPista(): Promise<string> {
@@ -267,20 +269,49 @@ export function Mezclador({
         </div>
       </div>
 
-      <label className="flex flex-col gap-2">
-        <span className="text-[13px] text-lavanda-100/70">
-          Qué tan presente está el fondo · {Math.round(ganancia * 100)}%
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={0.8}
-          step={0.05}
-          value={ganancia}
-          onChange={(e) => ajustar(setGanancia)(Number(e.target.value))}
-          className="accent-rosa-400"
-        />
-      </label>
+      {/*
+        Dos volúmenes separados a propósito: hay quien quiere oírse por
+        encima del río y quien quiere lo contrario, y eso cambia con el
+        ánimo del día. Un solo control de "mezcla" no permitiría subir los
+        dos ni bajar los dos.
+      */}
+      <div className="flex flex-col gap-5 rounded-[18px] border border-lavanda-100/15 bg-white/5 px-5 py-5">
+        <label className="flex flex-col gap-2">
+          <span className="flex items-baseline justify-between text-[13px] text-lavanda-100/70">
+            <span>Tu voz</span>
+            <span className="mono text-lavanda-100/50">
+              {Math.round(vozVolumen * 100)}%
+            </span>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={1.5}
+            step={0.05}
+            value={vozVolumen}
+            onChange={(e) => ajustar(setVozVolumen)(Number(e.target.value))}
+            className="accent-rosa-400"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="flex items-baseline justify-between text-[13px] text-lavanda-100/70">
+            <span>{nombreDeFondo(fondo)}</span>
+            <span className="mono text-lavanda-100/50">
+              {Math.round(ganancia * 100)}%
+            </span>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={ganancia}
+            onChange={(e) => ajustar(setGanancia)(Number(e.target.value))}
+            className="accent-menta-400"
+          />
+        </label>
+      </div>
 
       <label className="flex flex-col gap-2">
         <span className="text-[13px] text-lavanda-100/70">

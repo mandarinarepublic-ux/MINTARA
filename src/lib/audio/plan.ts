@@ -14,6 +14,12 @@ export type Frase = { inicio: number; fin: number };
 
 export type AjustesAudio = {
   fondo: string;
+  /**
+   * Volumen de la voz, independiente del fondo. Se multiplica encima de la
+   * normalización automática: 1 deja la voz en su nivel parejo, 0.4 la pone
+   * por detrás del ambiente, 0 la calla y queda solo el paisaje sonoro.
+   */
+  gananciaVoz: number;
   gananciaFondo: number;
   pausaSeg: number;
   orden: "original" | "barajado";
@@ -29,6 +35,7 @@ export type BloqueVoz = {
 export type PlanDeMezcla = {
   duracionTotal: number;
   voz: BloqueVoz[];
+  gananciaVoz: number;
   fondo: { pista: string; ganancia: number; entrada: number; salida: number };
 };
 
@@ -44,6 +51,11 @@ export function construirPlan(
 ): PlanDeMezcla {
   if (ajustes.gananciaFondo < 0 || ajustes.gananciaFondo > 1) {
     throw new Error("La ganancia del fondo debe estar entre 0 y 1");
+  }
+  // La voz llega hasta 2 porque puede hacer falta empujarla por encima de un
+  // ambiente denso; más que eso ya sería distorsión, no volumen.
+  if (ajustes.gananciaVoz < 0 || ajustes.gananciaVoz > 2) {
+    throw new Error("La ganancia de la voz debe estar entre 0 y 2");
   }
   if (ajustes.pausaSeg < 0) {
     throw new Error("La pausa no puede ser negativa");
@@ -79,6 +91,7 @@ export function construirPlan(
   return {
     duracionTotal: redondear(reloj + SALIDA_FONDO),
     voz,
+    gananciaVoz: ajustes.gananciaVoz,
     fondo: {
       pista: ajustes.fondo,
       ganancia: ajustes.gananciaFondo,

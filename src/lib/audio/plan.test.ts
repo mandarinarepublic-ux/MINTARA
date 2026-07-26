@@ -11,6 +11,7 @@ const FRASES: Frase[] = [
 
 const AJUSTES: AjustesAudio = {
   fondo: "lluvia",
+  gananciaVoz: 1,
   gananciaFondo: 0.35,
   pausaSeg: 2,
   orden: "original",
@@ -92,6 +93,34 @@ test("sin frases devuelve un plan vacío pero válido", () => {
 test("rechaza ganancias fuera de rango", () => {
   assert.throws(() => construirPlan(FRASES, { ...AJUSTES, gananciaFondo: 1.5 }));
   assert.throws(() => construirPlan(FRASES, { ...AJUSTES, gananciaFondo: -0.1 }));
+  assert.throws(() => construirPlan(FRASES, { ...AJUSTES, gananciaVoz: -0.1 }));
+  assert.throws(() => construirPlan(FRASES, { ...AJUSTES, gananciaVoz: 3 }));
+});
+
+test("la voz y el fondo llevan volúmenes independientes", () => {
+  const plan = construirPlan(FRASES, {
+    ...AJUSTES,
+    gananciaVoz: 0.4,
+    gananciaFondo: 0.8,
+  });
+  assert.equal(plan.gananciaVoz, 0.4);
+  assert.equal(plan.fondo.ganancia, 0.8);
+});
+
+test("se puede dejar el ambiente por encima de la voz", () => {
+  // El caso que pidió el usuario: oír más el río que su propia voz.
+  const plan = construirPlan(FRASES, {
+    ...AJUSTES,
+    gananciaVoz: 0.3,
+    gananciaFondo: 0.8,
+  });
+  assert.ok(plan.fondo.ganancia > plan.gananciaVoz);
+});
+
+test("bajar la voz a cero es válido: queda solo el ambiente", () => {
+  const plan = construirPlan(FRASES, { ...AJUSTES, gananciaVoz: 0 });
+  assert.equal(plan.gananciaVoz, 0);
+  assert.equal(plan.voz.length, FRASES.length);
 });
 
 test("rechaza pausas negativas", () => {

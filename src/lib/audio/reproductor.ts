@@ -103,17 +103,34 @@ export class Reproductor {
     fuenteFondo.connect(gananciaFondo);
     fuenteFondo.start(0, 0, plan.duracionTotal);
 
-    // Con estudio, todas las frases pasan por la misma cadena; sin él, van
-    // directo al destino tal como se grabaron.
-    const destinoVoz = conEstudio
-      ? crearCadenaEstudio(offline, this.gananciaVoz)
-      : null;
-    destinoVoz?.salida.connect(offline.destination);
+    /*
+     * El volumen final de la voz son dos cosas multiplicadas:
+     *   - la normalización automática, que deja toda grabación al mismo
+     *     nivel sin importar qué tan cerca del micrófono habló la persona;
+     *   - lo que la persona eligió con su control.
+     * Así el control se siente igual de predecible en una voz susurrada que
+     * en una grabada a gritos.
+     */
+    const volumenVoz = this.gananciaVoz * plan.gananciaVoz;
+
+    // Con estudio, la voz pasa además por el filtrado y la compresión.
+    const cadena = conEstudio ? crearCadenaEstudio(offline, volumenVoz) : null;
+    let entradaVoz: AudioNode;
+
+    if (cadena) {
+      cadena.salida.connect(offline.destination);
+      entradaVoz = cadena.entrada;
+    } else {
+      const volumen = offline.createGain();
+      volumen.gain.value = volumenVoz;
+      volumen.connect(offline.destination);
+      entradaVoz = volumen;
+    }
 
     for (const bloque of plan.voz) {
       const fuente = offline.createBufferSource();
       fuente.buffer = this.voz;
-      fuente.connect(destinoVoz ? destinoVoz.entrada : offline.destination);
+      fuente.connect(entradaVoz);
       fuente.start(bloque.entraEn, bloque.desde, bloque.hasta - bloque.desde);
     }
 
