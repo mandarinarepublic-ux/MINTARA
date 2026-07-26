@@ -89,6 +89,63 @@ export function Mezclador({
     };
   }
 
+  /*
+   * Rearmado automático al mover un control.
+   *
+   * La pieza se arma entera antes de sonar (es lo que permite que siga con
+   * la pantalla apagada), así que mover un volumen no puede afectar a la
+   * pista que ya está sonando. Sin esto, el control parece roto: lo mueves
+   * y no pasa nada.
+   *
+   * Se espera medio segundo desde el último movimiento para no rearmar en
+   * cada pixel del deslizador, y se retoma en el mismo punto.
+   */
+  const primerAjuste = useRef(true);
+  useEffect(() => {
+    if (primerAjuste.current) {
+      primerAjuste.current = false;
+      return;
+    }
+    if (!reproductor.current?.listo || frases.length === 0) return;
+
+    const temporizador = setTimeout(() => void rearmar(), 500);
+    return () => clearTimeout(temporizador);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vozVolumen, ganancia, pausa, estudio]);
+
+  async function rearmar() {
+    const el = audio.current;
+    if (!el) return;
+
+    const estabaSonando = !el.paused && el.currentTime > 0;
+    const posicion = el.currentTime;
+
+    try {
+      setPreparando(true);
+      const url = await armarPista();
+      el.src = url;
+      el.loop = true;
+
+      if (estabaSonando) {
+        // La posición se restaura cuando el navegador ya sabe cuánto dura
+        // la pista nueva; antes de eso, asignar currentTime no hace nada.
+        el.addEventListener(
+          "loadedmetadata",
+          () => {
+            el.currentTime = Math.min(posicion, Math.max(0, el.duration - 0.5));
+            void el.play();
+          },
+          { once: true },
+        );
+        el.load();
+      }
+    } catch {
+      setError("No pudimos actualizar el audio. Toca escuchar otra vez.");
+    } finally {
+      setPreparando(false);
+    }
+  }
+
   const planActual = useCallback(
     () =>
       construirPlan(frases, {
@@ -235,7 +292,9 @@ export function Mezclador({
         </div>
 
         {preparando && (
-          <p className="text-[13px] text-menta-400">Preparando tu audio…</p>
+          <p className="text-[13px] text-menta-400">
+            Aplicando tus cambios…
+          </p>
         )}
         {sonando && !preparando && (
           <p className="text-[13px] text-lavanda-100/60">
@@ -351,9 +410,9 @@ export function Mezclador({
         </button>
       </div>
 
-      {!vigente && sonando === false && frases.length > 0 && !ocupado && (
+      {!vigente && !sonando && frases.length > 0 && !ocupado && (
         <p className="text-center text-[13px] text-lavanda-100/55">
-          Toca escuchar para armar tu audio con estos ajustes.
+          Toca escuchar para oírlo con estos ajustes.
         </p>
       )}
 
