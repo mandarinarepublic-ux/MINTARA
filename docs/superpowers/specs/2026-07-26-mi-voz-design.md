@@ -142,7 +142,7 @@ necesita decirse a sí misma. Eso pide cuidado real, no una casilla de "acepto".
   **no entrene modelos con lo que se le manda** y que borre el archivo al terminar.
 - Política de privacidad en español, sin letra chica.
 
-**Estructura de datos** (schema propio en Supabase, aislado de los proyectos existentes):
+**Estructura de datos** (schema `voz` dentro de `mandarina-DATA`, mismo patrón que `mata` y `rrhh`):
 usuarios · paquetes de afirmaciones · textos del usuario · grabaciones (estado del pulido, marcas
 de tiempo de las frases) · configuraciones de audio guardadas.
 
@@ -196,10 +196,27 @@ Nada de eso se construye hasta saber si la gente vuelve una segunda vez.
 
 ---
 
+## 8.1 Costos
+
+La infraestructura **no suma costo**: Supabase Pro y Vercel Pro ya están pagados y este producto
+consume una fracción mínima de ambos (~1,5 MB de almacenamiento por usuario, y tráfico bajo porque
+el audio se mezcla en el celular, no en el servidor).
+
+Por eso el schema va dentro de `mandarina-DATA` y no en un proyecto Supabase nuevo: en una
+organización Pro, cada proyecto adicional cuesta unos $10/mes de cómputo. Un schema aparte da
+aislamiento suficiente sin costo.
+
+**La única partida nueva es el pulido con IA: $0,06 – $0,45 por grabación, una sola vez.** El rango
+se cierra con la prueba del punto 7. Es un costo que se paga también por usuarios que nunca van a
+pagar, y esa es toda la razón del límite de una grabación en el plan gratis.
+
+---
+
 ## 9. Stack
 
-- **Next.js en Vercel** — la app.
-- **Supabase** — cuentas, base de datos (schema propio) y almacenamiento privado de las voces.
+- **Next.js en Vercel** (plan Pro ya existente) — la app.
+- **Supabase** (plan Pro ya existente) — cuentas, base de datos (schema `voz` en `mandarina-DATA`)
+  y almacenamiento privado de las voces.
 - **Motor de audio del navegador** — mezcla, volúmenes, pausas y repetición. Sin servidor.
 - **Servicio externo de pulido** — a definir en la prueba del punto 7.
 - **dLocal** — link de pago manual.
