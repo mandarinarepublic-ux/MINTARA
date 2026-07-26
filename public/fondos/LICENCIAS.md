@@ -1,6 +1,14 @@
 # Fondos — PENDIENTE
 
-⚠️ **Esta carpeta está vacía y la app no suena sin ella.**
+⚠️ **`lluvia.mp3` es PROVISIONAL y hay que reemplazarlo.**
+
+Es ruido rosa sintético generado por código, no una grabación de lluvia. Existe solo para
+poder probar la cadena completa (grabar → pulir → mezclar) sin esperar a conseguir los
+audios definitivos. Suena aceptable, pero no es lluvia de verdad y **no se puede lanzar
+así**. Detalle técnico: es un WAV con extensión `.mp3` — el navegador decodifica por
+contenido, no por extensión.
+
+Los otros cuatro fondos faltan por completo.
 
 Hacen falta cinco pistas de ~3 minutos, en MP3, con estos nombres exactos:
 
