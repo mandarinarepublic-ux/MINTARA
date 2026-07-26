@@ -32,6 +32,7 @@ export function Mezclador({
   const [error, setError] = useState<string | null>(null);
   const [guardado, setGuardado] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [estudio, setEstudio] = useState(true);
 
   useEffect(() => {
     const r = new Reproductor();
@@ -94,9 +95,16 @@ export function Mezclador({
     });
   }
 
-  function sonar(fondoId = fondo) {
-    reproductor.current!.reproducir(planCon(fondoId), true);
+  function sonar(fondoId = fondo, conEstudio = estudio) {
+    reproductor.current!.reproducir(planCon(fondoId), true, conEstudio);
     setSonando(true);
+  }
+
+  /** Cambia el tratamiento en caliente, para poder comparar sin parar. */
+  function alternarEstudio() {
+    const nuevo = !estudio;
+    setEstudio(nuevo);
+    if (sonando) sonar(fondo, nuevo);
   }
 
   function parar() {
@@ -159,6 +167,28 @@ export function Mezclador({
           onChange={(e) => setPausa(Number(e.target.value))}
         />
       </label>
+
+      <div className="flex items-center justify-between rounded-xl border border-neutral-200 px-4 py-3">
+        <div>
+          <p className="font-medium">Voz de estudio</p>
+          <p className="text-sm text-neutral-500">
+            Empareja el volumen y le da presencia
+          </p>
+        </div>
+        <button
+          onClick={alternarEstudio}
+          aria-pressed={estudio}
+          className={`h-7 w-12 rounded-full transition ${
+            estudio ? "bg-neutral-900" : "bg-neutral-300"
+          }`}
+        >
+          <span
+            className={`block h-5 w-5 rounded-full bg-white transition ${
+              estudio ? "translate-x-6" : "translate-x-1"
+            }`}
+          />
+        </button>
+      </div>
 
       {plan && (
         <p className="text-sm text-neutral-500">

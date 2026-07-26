@@ -1,6 +1,7 @@
 "use client";
 import { construirPlan, type PlanDeMezcla, type Frase } from "./plan";
 import { calcularEnergia, detectarFrases } from "./frases";
+import { calcularGananciaNormalizacion, crearCadenaEstudio } from "./vozEstudio";
 
 /**
  * Ejecuta un plan de mezcla con Web Audio.
@@ -15,6 +16,8 @@ export class Reproductor {
   private fondo: AudioBuffer | null = null;
   private fuentes: AudioBufferSourceNode[] = [];
   private temporizador: ReturnType<typeof setTimeout> | null = null;
+  /** Cuánto hay que subir o bajar esta voz para que quede al nivel de todas. */
+  private gananciaVoz = 1;
 
   async cargar(vozUrl: string, fondoUrl: string): Promise<void> {
     this.contexto ??= new AudioContext();
@@ -24,6 +27,10 @@ export class Reproductor {
     ]);
     this.voz = voz;
     this.fondo = fondo;
+    // Se calcula una sola vez, sobre la grabación entera: si se recalculara
+    // por frase, las frases suaves quedarían tan fuertes como las firmes y
+    // la lectura perdería su relieve natural.
+    this.gananciaVoz = calcularGananciaNormalizacion(voz.getChannelData(0));
   }
 
   /** Cambia solo el fondo, sin volver a bajar la voz (que es la pesada). */
@@ -58,7 +65,7 @@ export class Reproductor {
     return detectarFrases(energia, 0.02);
   }
 
-  reproducir(plan: PlanDeMezcla, enBucle: boolean): void {
+  reproducir(plan: PlanDeMezcla, enBucle: boolean, conEstudio = true): void {
     if (!this.contexto || !this.voz || !this.fondo) return;
     this.detener();
     // iOS arranca el contexto suspendido: sin esto, el primer toque no suena.
@@ -86,10 +93,17 @@ export class Reproductor {
     fuenteFondo.start(ahora, 0, plan.duracionTotal);
     this.fuentes.push(fuenteFondo);
 
+    // Con estudio, todas las frases pasan por la misma cadena; sin él, van
+    // directo al destino tal como se grabaron. Es lo que permite comparar.
+    const destinoVoz = conEstudio
+      ? crearCadenaEstudio(this.contexto, this.gananciaVoz)
+      : null;
+    destinoVoz?.salida.connect(this.contexto.destination);
+
     for (const bloque of plan.voz) {
       const fuente = this.contexto.createBufferSource();
       fuente.buffer = this.voz;
-      fuente.connect(this.contexto.destination);
+      fuente.connect(destinoVoz ? destinoVoz.entrada : this.contexto.destination);
       fuente.start(
         ahora + bloque.entraEn,
         bloque.desde,
@@ -100,7 +114,7 @@ export class Reproductor {
 
     if (enBucle) {
       this.temporizador = setTimeout(
-        () => this.reproducir(plan, true),
+        () => this.reproducir(plan, true, conEstudio),
         plan.duracionTotal * 1000,
       );
     }
