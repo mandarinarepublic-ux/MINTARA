@@ -27,8 +27,8 @@ export default async function Cuenta() {
 
   return (
     <main className="mx-auto flex w-full max-w-[402px] flex-col gap-8 px-[22px] py-10 md:max-w-[520px]">
-      <Link href="/estudio" className="text-[15px] text-lavanda-100/70">
-        ← Volver
+      <Link href="/audios" className="text-[15px] text-lavanda-100/70">
+        ← Mis audios
       </Link>
 
       <h1 className="display text-[28px] text-crema-50">Perfil</h1>

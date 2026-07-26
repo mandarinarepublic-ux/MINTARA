@@ -23,7 +23,10 @@ export default function Estudio() {
 
   return (
     <main className="mx-auto w-full max-w-[402px] px-[22px] py-10 md:max-w-[520px]">
-      <p className="etiqueta text-lavanda-100/50">Paso 1 de 2</p>
+      <a href="/audios" className="text-[15px] text-lavanda-100/70">
+        ← Mis audios
+      </a>
+      <p className="etiqueta mt-6 text-lavanda-100/50">Paso 1 de 2</p>
       <h1 className="display mt-2 text-[28px] leading-tight text-crema-50">
         ¿Qué quieres decirte?
       </h1>

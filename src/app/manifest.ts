@@ -12,7 +12,9 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Míntara — tu voz, tus palabras, tu intención",
     short_name: "Míntara",
     description: "Tus afirmaciones, con tu propia voz, sobre lluvia, río o mar.",
-    start_url: "/estudio",
+    // Abre en la biblioteca: quien ya tiene audios entra a escucharlos, y
+    // quien no, encuentra ahí el botón para grabar el primero.
+    start_url: "/audios",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

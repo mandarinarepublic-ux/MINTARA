@@ -32,5 +32,12 @@ export async function validarCodigo(
     return { error: "Entraste, pero no pudimos abrir tu perfil. Inténtalo otra vez." };
   }
 
-  redirect("/estudio");
+  // Quien ya grabó algo espera encontrarlo, no una pantalla en blanco para
+  // empezar de cero.
+  const { count } = await supabase
+    .from("grabaciones")
+    .select("id", { count: "exact", head: true })
+    .eq("perfil_id", data.user.id);
+
+  redirect(count && count > 0 ? "/audios" : "/estudio");
 }

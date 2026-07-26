@@ -48,11 +48,11 @@ export default async function Mezclar({
   return (
     <main className="mx-auto w-full max-w-[402px] px-[22px] py-8 md:max-w-[520px]">
       <div className="flex items-center justify-between">
-        <Link href="/estudio" className="text-[15px] text-lavanda-100/70">
-          ← Volver
+        <Link href="/audios" className="text-[15px] text-lavanda-100/70">
+          ← Mis audios
         </Link>
         <Link href="/cuenta" className="text-[13px] text-rosa-400">
-          Mi cuenta
+          Mi perfil
         </Link>
       </div>
 
