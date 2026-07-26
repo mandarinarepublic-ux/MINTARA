@@ -25,9 +25,16 @@ Producto comercial nuevo, independiente de Mandarina, IND y La Mata.
    Empezar el día. Puede editar cualquier frase o escribir las suyas desde cero.
 3. **Graba de corrido.** El texto aparece grande, tipo teleprompter. Un solo botón: grabar / parar.
    Puede volver a grabar completo si no le gustó.
-4. **La IA pule la toma.** Quita ruido de cuarto y eco, elimina muletillas y silencios muertos,
-   empareja el volumen, y la toma se corta en frases sueltas. Ocurre **una sola vez** por grabación
-   y queda guardada como su **voz master**.
+4. **La IA pule la toma.** Quita ruido de cuarto y eco, empareja el volumen, y la toma se corta en
+   frases sueltas. Ocurre **una sola vez** por grabación y queda guardada como su **voz master**.
+
+   Los **silencios muertos desaparecen solos**: como la pieza se arma frase por frase, lo que quedó
+   entre frases nunca llega al audio final. Las **muletillas** ("eeeh", "o sea") sí sobreviven —
+   ninguno de los tres servicios de pulido las corta, eso exige transcribir el audio. Queda fuera
+   del primer entregable a propósito: la persona está **leyendo** un texto en pantalla, que es
+   justo la situación donde menos muletillas aparecen. Si en las primeras grabaciones reales
+   molesta, se agrega un servicio de transcripción sin tocar nada más, porque el pulido vive detrás
+   de una interfaz.
 5. **Arma su audio.** Elige fondo, qué tan presente está ese fondo frente a la voz, y cuánto
    silencio queda entre frase y frase. Todo suena **al instante** mientras mueve los controles.
 6. **Escucha dentro de la app**, en repetición si quiere. En el plan pago puede además guardarlo
@@ -206,9 +213,20 @@ Por eso el schema va dentro de `mandarina-DATA` y no en un proyecto Supabase nue
 organización Pro, cada proyecto adicional cuesta unos $10/mes de cómputo. Un schema aparte da
 aislamiento suficiente sin costo.
 
-**La única partida nueva es el pulido con IA: $0,06 – $0,45 por grabación, una sola vez.** El rango
-se cierra con la prueba del punto 7. Es un costo que se paga también por usuarios que nunca van a
-pagar, y esa es toda la razón del límite de una grabación en el plan gratis.
+**La única partida nueva es el pulido con IA.** Precios verificados el 26-jul-2026, para una
+grabación de 3 minutos:
+
+| Servicio | Precio | Por grabación | Gratis al mes |
+|---|---|---|---|
+| Auphonic S ($11–13/mes por 9 h) | ~$0,024/min | $0,07 | 2 horas (con jingle) |
+| Dolby.io Media Enhance | $0,05/min | $0,15 | 200 min |
+| ElevenLabs Voice Isolator (1.000 créditos/min) | ~$0,15–0,22/min | $0,45–0,66 | 10.000 créditos ≈ 10 min |
+
+**La prueba de la sección 7 cuesta $0**: los tres planes gratuitos cubren de sobra 2 minutos de
+audio.
+
+Es un costo que se paga también por usuarios que nunca van a pagar, y esa es toda la razón del
+límite de una grabación en el plan gratis.
 
 ---
 
