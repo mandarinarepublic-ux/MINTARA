@@ -7,7 +7,7 @@ import { guardarParaSinInternet, estaGuardado } from "@/lib/sinInternet";
 import { puedeUsarSinInternet, type Plan } from "@/lib/planes";
 import { guardarCortes } from "./acciones";
 
-/** WAV vacío. Sirve para "despertar" el reproductor dentro del toque. */
+/** WAV vacío. Sirve para "despertar" los reproductores dentro del toque. */
 const SILENCIO =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
@@ -24,17 +24,17 @@ export function Mezclador({
   vozUrl: string;
   cortesGuardados: Frase[] | null;
   fondosPermitidos: string[];
-  // Se llama planUsuario y no plan porque aquí `plan` ya es el plan de
-  // mezcla que devuelve construirPlan.
   planUsuario: Plan;
 }) {
   const reproductor = useRef<Reproductor | null>(null);
-  const audio = useRef<HTMLAudioElement | null>(null);
-  const urlPista = useRef<string | null>(null);
+  const pistaVoz = useRef<HTMLAudioElement | null>(null);
+  const pistaFondo = useRef<HTMLAudioElement | null>(null);
+  const urlVoz = useRef<string | null>(null);
+  const urlFondo = useRef<string | null>(null);
 
   const [fondo, setFondo] = useState(fondosPermitidos[0] ?? "lluvia");
-  const [vozVolumen, setVozVolumen] = useState(1);
-  const [ganancia, setGanancia] = useState(0.35);
+  const [vozVolumen, setVozVolumen] = useState(0.9);
+  const [fondoVolumen, setFondoVolumen] = useState(0.35);
   const [pausa, setPausa] = useState(2);
   const [estudio, setEstudio] = useState(true);
 
@@ -45,9 +45,7 @@ export function Mezclador({
   const [error, setError] = useState<string | null>(null);
   const [guardado, setGuardado] = useState(false);
   const [guardando, setGuardando] = useState(false);
-
-  /** La pista armada deja de servir cuando cambia cualquier ajuste. */
-  const [vigente, setVigente] = useState(false);
+  const [armado, setArmado] = useState(false);
 
   useEffect(() => {
     const r = new Reproductor();
@@ -73,98 +71,57 @@ export function Mezclador({
     void estaGuardado(grabacionId).then(setGuardado);
 
     return () => {
-      // Liberar el blob al salir: son varios megas por pista y el navegador
-      // no los recoge solo mientras la URL siga viva.
-      if (urlPista.current) URL.revokeObjectURL(urlPista.current);
+      // Los blobs pesan varios megas y el navegador no los suelta solo.
+      if (urlVoz.current) URL.revokeObjectURL(urlVoz.current);
+      if (urlFondo.current) URL.revokeObjectURL(urlFondo.current);
     };
-    // Solo al montar: el cambio de fondo se maneja aparte, sin recargar la voz.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Cualquier ajuste invalida la pista ya armada. */
-  function ajustar<T>(setter: (v: T) => void) {
-    return (valor: T) => {
-      setter(valor);
-      setVigente(false);
-    };
-  }
-
-  /*
-   * Rearmado automático al mover un control.
-   *
-   * La pieza se arma entera antes de sonar (es lo que permite que siga con
-   * la pantalla apagada), así que mover un volumen no puede afectar a la
-   * pista que ya está sonando. Sin esto, el control parece roto: lo mueves
-   * y no pasa nada.
-   *
-   * Se espera medio segundo desde el último movimiento para no rearmar en
-   * cada pixel del deslizador, y se retoma en el mismo punto.
-   */
-  const primerAjuste = useRef(true);
+  // Los volúmenes son los del propio reproductor: cambian al instante, sin
+  // rearmar nada. Esa es toda la razón de tener dos pistas separadas.
   useEffect(() => {
-    if (primerAjuste.current) {
-      primerAjuste.current = false;
-      return;
-    }
-    if (!reproductor.current?.listo || frases.length === 0) return;
+    if (pistaVoz.current) pistaVoz.current.volume = Math.min(1, vozVolumen);
+  }, [vozVolumen]);
 
-    const temporizador = setTimeout(() => void rearmar(), 500);
-    return () => clearTimeout(temporizador);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vozVolumen, ganancia, pausa, estudio]);
-
-  async function rearmar() {
-    const el = audio.current;
-    if (!el) return;
-
-    const estabaSonando = !el.paused && el.currentTime > 0;
-    const posicion = el.currentTime;
-
-    try {
-      setPreparando(true);
-      const url = await armarPista();
-      el.src = url;
-      el.loop = true;
-
-      if (estabaSonando) {
-        // La posición se restaura cuando el navegador ya sabe cuánto dura
-        // la pista nueva; antes de eso, asignar currentTime no hace nada.
-        el.addEventListener(
-          "loadedmetadata",
-          () => {
-            el.currentTime = Math.min(posicion, Math.max(0, el.duration - 0.5));
-            void el.play();
-          },
-          { once: true },
-        );
-        el.load();
-      }
-    } catch {
-      setError("No pudimos actualizar el audio. Toca escuchar otra vez.");
-    } finally {
-      setPreparando(false);
-    }
-  }
+  useEffect(() => {
+    if (pistaFondo.current) pistaFondo.current.volume = Math.min(1, fondoVolumen);
+  }, [fondoVolumen]);
 
   const planActual = useCallback(
     () =>
       construirPlan(frases, {
         fondo,
         gananciaVoz: vozVolumen,
-        gananciaFondo: ganancia,
+        gananciaFondo: fondoVolumen,
         pausaSeg: pausa,
         orden: "original",
       }),
-    [frases, fondo, vozVolumen, ganancia, pausa],
+    [frases, fondo, vozVolumen, fondoVolumen, pausa],
   );
 
-  async function armarPista(): Promise<string> {
-    const blob = await reproductor.current!.renderizar(planActual(), estudio);
-    if (urlPista.current) URL.revokeObjectURL(urlPista.current);
-    const url = URL.createObjectURL(blob);
-    urlPista.current = url;
-    setVigente(true);
-    return url;
+  /** Arma ambas pistas. Solo hace falta al cambiar pausas, estudio o ambiente. */
+  async function armar(): Promise<void> {
+    const plan = planActual();
+    const [voz, ambiente] = await Promise.all([
+      reproductor.current!.renderizarVoz(plan, estudio),
+      reproductor.current!.renderizarFondo(plan),
+    ]);
+
+    if (urlVoz.current) URL.revokeObjectURL(urlVoz.current);
+    if (urlFondo.current) URL.revokeObjectURL(urlFondo.current);
+    urlVoz.current = URL.createObjectURL(voz);
+    urlFondo.current = URL.createObjectURL(ambiente);
+
+    const v = pistaVoz.current!;
+    const f = pistaFondo.current!;
+    v.src = urlVoz.current;
+    f.src = urlFondo.current;
+    v.loop = true;
+    f.loop = true;
+    v.volume = Math.min(1, vozVolumen);
+    f.volume = Math.min(1, fondoVolumen);
+    setArmado(true);
   }
 
   function anunciarAlSistema() {
@@ -177,28 +134,31 @@ export function Mezclador({
         { src: "/marca/mintara-icon.png", sizes: "512x512", type: "image/png" },
       ],
     });
-    navigator.mediaSession.setActionHandler("play", () => void audio.current?.play());
-    navigator.mediaSession.setActionHandler("pause", () => audio.current?.pause());
+    navigator.mediaSession.setActionHandler("play", () => void escuchar());
+    navigator.mediaSession.setActionHandler("pause", () => parar());
   }
 
   async function escuchar() {
-    const el = audio.current;
-    if (!el) return;
+    const v = pistaVoz.current;
+    const f = pistaFondo.current;
+    if (!v || !f) return;
     setError(null);
 
-    // Dentro del toque: iOS solo deja sonar si el elemento arrancó por un
-    // gesto. Sin esto, el audio queda mudo tras la espera del armado.
-    if (!vigente) {
-      el.src = SILENCIO;
-      void el.play().catch(() => {});
+    // Dentro del toque: iOS solo deja sonar lo que arrancó por un gesto.
+    if (!armado) {
+      v.src = SILENCIO;
+      f.src = SILENCIO;
+      void v.play().catch(() => {});
+      void f.play().catch(() => {});
     }
 
     try {
       setPreparando(true);
-      const url = vigente && urlPista.current ? urlPista.current : await armarPista();
-      el.src = url;
-      el.loop = true;
-      await el.play();
+      if (!armado) await armar();
+      // Arrancan juntas desde el mismo punto: duran exactamente lo mismo.
+      const desde = v.currentTime;
+      f.currentTime = desde;
+      await Promise.all([v.play(), f.play()]);
       anunciarAlSistema();
       setSonando(true);
     } catch {
@@ -209,20 +169,60 @@ export function Mezclador({
   }
 
   function parar() {
-    audio.current?.pause();
+    pistaVoz.current?.pause();
+    pistaFondo.current?.pause();
     setSonando(false);
   }
 
+  /**
+   * Rearma solo lo que sí lo necesita: las pausas y el modo estudio cambian
+   * la pista, los volúmenes no.
+   */
+  const primerAjuste = useRef(true);
+  useEffect(() => {
+    if (primerAjuste.current) {
+      primerAjuste.current = false;
+      return;
+    }
+    if (!reproductor.current?.listo || frases.length === 0 || !armado) return;
+
+    const temporizador = setTimeout(async () => {
+      const v = pistaVoz.current!;
+      const seguia = !v.paused;
+      const posicion = v.currentTime;
+      setPreparando(true);
+      try {
+        await armar();
+        v.currentTime = Math.min(posicion, Math.max(0, v.duration || posicion));
+        pistaFondo.current!.currentTime = v.currentTime;
+        if (seguia) await Promise.all([v.play(), pistaFondo.current!.play()]);
+      } catch {
+        setError("No pudimos aplicar el cambio. Toca escuchar otra vez.");
+      } finally {
+        setPreparando(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(temporizador);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pausa, estudio]);
+
   async function cambiarFondo(id: string) {
     setFondo(id);
-    setVigente(false);
     setCargando(true);
-    const estaba = sonando;
+    const seguia = sonando;
+    const posicion = pistaVoz.current?.currentTime ?? 0;
     parar();
     try {
       await reproductor.current!.cambiarFondo(rutaDeFondo(id));
+      await armar();
+      pistaVoz.current!.currentTime = posicion;
+      pistaFondo.current!.currentTime = posicion;
       setCargando(false);
-      if (estaba) await escuchar();
+      if (seguia) {
+        await Promise.all([pistaVoz.current!.play(), pistaFondo.current!.play()]);
+        setSonando(true);
+      }
     } catch {
       setError(`El ambiente ${nombreDeFondo(id)} todavía no está disponible.`);
       setCargando(false);
@@ -245,12 +245,14 @@ export function Mezclador({
 
   return (
     <div className="flex flex-col gap-7">
+      {/* La voz manda: es la que lleva los controles del sistema. */}
       <audio
-        ref={audio}
+        ref={pistaVoz}
         onPlay={() => setSonando(true)}
         onPause={() => setSonando(false)}
         className="hidden"
       />
+      <audio ref={pistaFondo} className="hidden" />
 
       <div className="flex flex-col gap-5 rounded-[26px] border border-lavanda-100/20 bg-violeta-600/50 px-6 py-6">
         <div className="flex items-center gap-4">
@@ -292,9 +294,7 @@ export function Mezclador({
         </div>
 
         {preparando && (
-          <p className="text-[13px] text-menta-400">
-            Aplicando tus cambios…
-          </p>
+          <p className="text-[13px] text-menta-400">Preparando tu audio…</p>
         )}
         {sonando && !preparando && (
           <p className="text-[13px] text-lavanda-100/60">
@@ -329,10 +329,8 @@ export function Mezclador({
       </div>
 
       {/*
-        Dos volúmenes separados a propósito: hay quien quiere oírse por
-        encima del río y quien quiere lo contrario, y eso cambia con el
-        ánimo del día. Un solo control de "mezcla" no permitiría subir los
-        dos ni bajar los dos.
+        Dos volúmenes independientes, y ambos se oyen al instante: son el
+        volumen de cada pista, no un ajuste que obligue a rehacer el audio.
       */}
       <div className="flex flex-col gap-5 rounded-[18px] border border-lavanda-100/15 bg-white/5 px-5 py-5">
         <label className="flex flex-col gap-2">
@@ -345,10 +343,10 @@ export function Mezclador({
           <input
             type="range"
             min={0}
-            max={1.5}
+            max={1}
             step={0.05}
             value={vozVolumen}
-            onChange={(e) => ajustar(setVozVolumen)(Number(e.target.value))}
+            onChange={(e) => setVozVolumen(Number(e.target.value))}
             className="accent-rosa-400"
           />
         </label>
@@ -357,7 +355,7 @@ export function Mezclador({
           <span className="flex items-baseline justify-between text-[13px] text-lavanda-100/70">
             <span>{nombreDeFondo(fondo)}</span>
             <span className="mono text-lavanda-100/50">
-              {Math.round(ganancia * 100)}%
+              {Math.round(fondoVolumen * 100)}%
             </span>
           </span>
           <input
@@ -365,8 +363,8 @@ export function Mezclador({
             min={0}
             max={1}
             step={0.05}
-            value={ganancia}
-            onChange={(e) => ajustar(setGanancia)(Number(e.target.value))}
+            value={fondoVolumen}
+            onChange={(e) => setFondoVolumen(Number(e.target.value))}
             className="accent-menta-400"
           />
         </label>
@@ -382,8 +380,8 @@ export function Mezclador({
           max={8}
           step={0.5}
           value={pausa}
-          onChange={(e) => ajustar(setPausa)(Number(e.target.value))}
-          className="accent-rosa-400"
+          onChange={(e) => setPausa(Number(e.target.value))}
+          className="accent-lila-400"
         />
       </label>
 
@@ -395,7 +393,7 @@ export function Mezclador({
           </p>
         </div>
         <button
-          onClick={() => ajustar(setEstudio)(!estudio)}
+          onClick={() => setEstudio(!estudio)}
           aria-pressed={estudio}
           aria-label="Voz de estudio"
           className={`flex h-[26px] w-[44px] items-center rounded-full px-[3px] transition ${
@@ -409,12 +407,6 @@ export function Mezclador({
           />
         </button>
       </div>
-
-      {!vigente && !sonando && frases.length > 0 && !ocupado && (
-        <p className="text-center text-[13px] text-lavanda-100/55">
-          Toca escuchar para oírlo con estos ajustes.
-        </p>
-      )}
 
       {error && <p className="text-sm text-rosa-400">{error}</p>}
 
