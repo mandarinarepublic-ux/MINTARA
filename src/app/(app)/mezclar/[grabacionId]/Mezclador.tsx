@@ -11,20 +11,19 @@ import { guardarCortes } from "./acciones";
 const SILENCIO =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
-/**
- * ¿Este navegador deja cambiar el volumen por software?
+/*
+ * Sobre el volumen: NO se usa la propiedad `volume` del reproductor.
  *
- * En Safari de iPhone NO: `volume` es de solo lectura porque Apple reserva
- * el volumen a los botones físicos. Escribirlo no da error, simplemente no
- * pasa nada — por eso hay que comprobarlo leyendo de vuelta.
+ * En Safari de iPhone esa propiedad guarda el valor que se le pone —tanto
+ * que leerla de vuelta devuelve lo que escribiste— pero no afecta al sonido:
+ * Apple reserva el volumen a los botones físicos. Es decir, no hay forma
+ * fiable de detectar si funciona, porque el navegador responde que sí y
+ * luego lo ignora.
+ *
+ * Por eso el volumen va horneado dentro de cada pista al armarla. Cuesta un
+ * segundo de espera al moverlo, pero suena igual en todos los teléfonos, que
+ * es lo que importa.
  */
-function permiteCambiarVolumen(el: HTMLAudioElement): boolean {
-  const antes = el.volume;
-  el.volume = 0.42;
-  const funciona = Math.abs(el.volume - 0.42) < 0.01;
-  el.volume = antes;
-  return funciona;
-}
 
 export function Mezclador({
   grabacionId,
@@ -61,8 +60,6 @@ export function Mezclador({
   const [guardado, setGuardado] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [armado, setArmado] = useState(false);
-  /** null mientras no se ha comprobado. */
-  const [volumenEnVivo, setVolumenEnVivo] = useState<boolean | null>(null);
 
   useEffect(() => {
     const r = new Reproductor();
@@ -82,10 +79,6 @@ export function Mezclador({
         setCargando(false);
       });
 
-    if (pistaVoz.current) {
-      setVolumenEnVivo(permiteCambiarVolumen(pistaVoz.current));
-    }
-
     if ("serviceWorker" in navigator) {
       void navigator.serviceWorker.register("/sw.js");
     }
@@ -99,21 +92,6 @@ export function Mezclador({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Donde se puede, los volúmenes son los del propio reproductor: cambian al
-  // instante. Donde no (iPhone), van horneados en la pista y se aplican en
-  // el rearmado de más abajo.
-  useEffect(() => {
-    if (volumenEnVivo && pistaVoz.current) {
-      pistaVoz.current.volume = Math.min(1, vozVolumen);
-    }
-  }, [vozVolumen, volumenEnVivo]);
-
-  useEffect(() => {
-    if (volumenEnVivo && pistaFondo.current) {
-      pistaFondo.current.volume = Math.min(1, fondoVolumen);
-    }
-  }, [fondoVolumen, volumenEnVivo]);
-
   const planActual = useCallback(
     () =>
       construirPlan(frases, {
@@ -126,15 +104,12 @@ export function Mezclador({
     [frases, fondo, vozVolumen, fondoVolumen, pausa],
   );
 
-  /** Arma ambas pistas. Solo hace falta al cambiar pausas, estudio o ambiente. */
+  /** Arma ambas pistas con los volúmenes ya aplicados dentro. */
   async function armar(): Promise<void> {
     const plan = planActual();
-    // Si el navegador no deja tocar el volumen en vivo, va horneado aquí.
-    const vVoz = volumenEnVivo ? 1 : vozVolumen;
-    const vFondo = volumenEnVivo ? 1 : fondoVolumen;
     const [voz, ambiente] = await Promise.all([
-      reproductor.current!.renderizarVoz(plan, estudio, vVoz),
-      reproductor.current!.renderizarFondo(plan, vFondo),
+      reproductor.current!.renderizarVoz(plan, estudio, vozVolumen),
+      reproductor.current!.renderizarFondo(plan, fondoVolumen),
     ]);
 
     if (urlVoz.current) URL.revokeObjectURL(urlVoz.current);
@@ -148,10 +123,6 @@ export function Mezclador({
     f.src = urlFondo.current;
     v.loop = true;
     f.loop = true;
-    if (volumenEnVivo) {
-      v.volume = Math.min(1, vozVolumen);
-      f.volume = Math.min(1, fondoVolumen);
-    }
     setArmado(true);
   }
 
@@ -206,8 +177,12 @@ export function Mezclador({
   }
 
   /**
-   * Rearma solo lo que sí lo necesita: las pausas y el modo estudio cambian
-   * la pista, los volúmenes no.
+   * Al soltar cualquier control, se rehace el audio y vuelve a empezar.
+   *
+   * Empieza de cero a propósito: el cambio se juzga oyendo la pieza completa,
+   * y retomar a mitad hacía que un ajuste de volumen se evaluara sobre una
+   * frase suelta. Medio segundo de espera desde el último movimiento evita
+   * rehacerlo en cada pixel del deslizador.
    */
   const primerAjuste = useRef(true);
   useEffect(() => {
@@ -219,26 +194,27 @@ export function Mezclador({
 
     const temporizador = setTimeout(async () => {
       const v = pistaVoz.current!;
-      const seguia = !v.paused;
-      const posicion = v.currentTime;
+      const f = pistaFondo.current!;
+      const seguiaSonando = !v.paused;
+
       setPreparando(true);
+      v.pause();
+      f.pause();
       try {
         await armar();
-        v.currentTime = Math.min(posicion, Math.max(0, v.duration || posicion));
-        pistaFondo.current!.currentTime = v.currentTime;
-        if (seguia) await Promise.all([v.play(), pistaFondo.current!.play()]);
+        v.currentTime = 0;
+        f.currentTime = 0;
+        if (seguiaSonando) await Promise.all([v.play(), f.play()]);
       } catch {
         setError("No pudimos aplicar el cambio. Toca escuchar otra vez.");
       } finally {
         setPreparando(false);
       }
-    }, 400);
+    }, 500);
 
     return () => clearTimeout(temporizador);
-    // Los volúmenes solo entran aquí donde no se pueden cambiar en vivo: en
-    // iPhone van dentro de la pista, así que moverlos obliga a rehacerla.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pausa, estudio, volumenEnVivo ? null : vozVolumen, volumenEnVivo ? null : fondoVolumen]);
+  }, [vozVolumen, fondoVolumen, pausa, estudio]);
 
   async function cambiarFondo(id: string) {
     setFondo(id);
