@@ -4,6 +4,7 @@ import {
   puedeGrabar,
   puedeUsarSinInternet,
   duracionMaximaSeg,
+  planEfectivo,
   PRECIOS,
   LIMITES,
 } from "./planes.ts";
@@ -21,6 +22,18 @@ test("premium permite muchos audios", () => {
 test("gratis graba hasta un minuto; premium hasta diez", () => {
   assert.equal(duracionMaximaSeg("gratis"), 60);
   assert.equal(duracionMaximaSeg("premium"), 600);
+});
+
+test("quien administra nunca topa con los límites", () => {
+  assert.equal(planEfectivo("gratis", "admin"), "premium");
+  assert.equal(puedeGrabar(planEfectivo("gratis", "admin"), 30), true);
+});
+
+test("a quien no administra no se le regala premium", () => {
+  assert.equal(planEfectivo("gratis", "socio"), "gratis");
+  assert.equal(planEfectivo("gratis", null), "gratis");
+  assert.equal(planEfectivo("gratis", undefined), "gratis");
+  assert.equal(planEfectivo("premium", "socio"), "premium");
 });
 
 test("el modo sin internet es solo de premium", () => {

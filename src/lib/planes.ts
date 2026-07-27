@@ -37,6 +37,17 @@ export const PRECIOS = {
   anual: { monto: 49.99, moneda: "USD", etiqueta: "$49,99 / año" },
 } as const;
 
+/**
+ * El plan con el que se trata a alguien.
+ *
+ * Quien administra nunca topa con los límites: necesita grabar una y otra
+ * vez para probar el producto, y quedarse sin audios a mitad de una prueba
+ * es la clase de fricción que hace perder una tarde.
+ */
+export function planEfectivo(plan: Plan, rol?: string | null): Plan {
+  return rol === "admin" ? "premium" : plan;
+}
+
 export function puedeGrabar(plan: Plan, audiosActuales: number): boolean {
   return audiosActuales < LIMITES[plan].audios;
 }

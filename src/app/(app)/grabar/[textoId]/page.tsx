@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { supabaseServidor } from "@/lib/supabase/servidor";
-import { duracionMaximaSeg, type Plan } from "@/lib/planes";
+import { duracionMaximaSeg, planEfectivo, type Plan } from "@/lib/planes";
 import { Grabador } from "./Grabador";
 
 export default async function Grabar({
@@ -18,7 +18,7 @@ export default async function Grabar({
 
   const { data: perfil } = await supabase
     .from("perfiles")
-    .select("consentimiento_en, plan")
+    .select("consentimiento_en, plan, rol")
     .eq("id", user.id)
     .single();
 
@@ -34,7 +34,7 @@ export default async function Grabar({
 
   if (!texto) notFound();
 
-  const plan = (perfil?.plan ?? "gratis") as Plan;
+  const plan = planEfectivo((perfil?.plan ?? "gratis") as Plan, perfil?.rol);
 
   return (
     <main className="mx-auto flex w-full max-w-[402px] flex-col px-[22px] py-8 md:max-w-[520px]">

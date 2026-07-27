@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import { haceCuanto } from "@/lib/fechas";
-import { puedeGrabar, LIMITES, PRECIOS, type Plan } from "@/lib/planes";
+import { puedeGrabar, planEfectivo, LIMITES, PRECIOS, type Plan } from "@/lib/planes";
 
 export default async function MisAudios() {
   const supabase = await supabaseServidor();
@@ -14,7 +14,7 @@ export default async function MisAudios() {
 
   const { data: perfil } = await supabase
     .from("perfiles")
-    .select("plan")
+    .select("plan, rol")
     .eq("id", user.id)
     .single();
 
@@ -25,7 +25,7 @@ export default async function MisAudios() {
     .order("creado_en", { ascending: false });
 
   const lista = grabaciones ?? [];
-  const plan = (perfil?.plan ?? "gratis") as Plan;
+  const plan = planEfectivo((perfil?.plan ?? "gratis") as Plan, perfil?.rol);
   const puedeUnoMas = puedeGrabar(plan, lista.length);
   const ahora = new Date();
 

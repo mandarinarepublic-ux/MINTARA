@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { supabaseServidor } from "@/lib/supabase/servidor";
-import { LIMITES, PRECIOS, type Plan } from "@/lib/planes";
+import { planEfectivo, LIMITES, PRECIOS, type Plan } from "@/lib/planes";
 import { pedirDesbloqueo } from "../cuenta/acciones";
 
 /**
@@ -22,11 +22,11 @@ export default async function Premium() {
 
   const { data: perfil } = await supabase
     .from("perfiles")
-    .select("plan")
+    .select("plan, rol")
     .eq("id", user.id)
     .single();
 
-  const plan = (perfil?.plan ?? "gratis") as Plan;
+  const plan = planEfectivo((perfil?.plan ?? "gratis") as Plan, perfil?.rol);
   if (plan === "premium") redirect("/audios");
 
   const beneficios = [

@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import { exigirEntorno } from "@/lib/entorno";
-import { type Plan } from "@/lib/planes";
+import { planEfectivo, type Plan } from "@/lib/planes";
 import {
   agruparPorFamilia,
   ambientesPermitidos,
@@ -31,7 +31,7 @@ export default async function Mezclar({
         .select("id, ruta_master, cortes, textos(nombre)")
         .eq("id", grabacionId)
         .single(),
-      supabase.from("perfiles").select("plan").eq("id", user.id).single(),
+      supabase.from("perfiles").select("plan, rol").eq("id", user.id).single(),
       supabase.from("familias").select("*").order("orden"),
       supabase.from("ambientes").select("*").order("orden"),
     ]);
@@ -51,7 +51,7 @@ export default async function Mezclar({
 
   if (!firmada) notFound();
 
-  const plan = (perfil?.plan ?? "gratis") as Plan;
+  const plan = planEfectivo((perfil?.plan ?? "gratis") as Plan, perfil?.rol);
   const listaFamilias = (familias ?? []) as Familia[];
   const listaAmbientes = (ambientes ?? []) as Ambiente[];
 

@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { supabaseServidor } from "@/lib/supabase/servidor";
-import { puedeGrabar, type Plan } from "@/lib/planes";
+import { puedeGrabar, planEfectivo, type Plan } from "@/lib/planes";
 
 const Entrada = z.object({
   nombre: z.string().trim().min(1).max(60),
@@ -39,7 +39,7 @@ export async function guardarTexto(
   // saltar, una server action no.
   const { data: perfil } = await supabase
     .from("perfiles")
-    .select("plan")
+    .select("plan, rol")
     .eq("id", user.id)
     .single();
 
@@ -48,7 +48,7 @@ export async function guardarTexto(
     .select("id", { count: "exact", head: true })
     .eq("perfil_id", user.id);
 
-  if (!puedeGrabar((perfil?.plan ?? "gratis") as Plan, count ?? 0)) {
+  if (!puedeGrabar(planEfectivo((perfil?.plan ?? "gratis") as Plan, perfil?.rol), count ?? 0)) {
     return {
       error: "Ya usaste tu grabación gratis. Desbloquea más desde tu cuenta.",
     };

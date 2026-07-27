@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import { ocultarCelular } from "@/lib/telefono";
-import { LIMITES, PRECIOS, type Plan } from "@/lib/planes";
+import { planEfectivo, LIMITES, PRECIOS, type Plan } from "@/lib/planes";
 import { borrarTodo } from "./acciones";
 
 export default async function Cuenta() {
@@ -23,7 +23,7 @@ export default async function Cuenta() {
     .select("id", { count: "exact", head: true })
     .eq("perfil_id", user.id);
 
-  const plan = (perfil?.plan ?? "gratis") as Plan;
+  const plan = planEfectivo((perfil?.plan ?? "gratis") as Plan, perfil?.rol);
 
   return (
     <main className="mx-auto flex w-full max-w-[402px] flex-col gap-8 px-[22px] py-10 md:max-w-[520px]">
