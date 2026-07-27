@@ -21,42 +21,20 @@ const UMBRAL_DE_SILENCIO = 0.06;
 type Estado = "listo" | "grabando" | "revisando" | "subiendo";
 
 /**
- * Lo que queda de texto, como una barra que se agota.
+ * Lo que queda de texto, como una línea que se agota en el borde de la caja.
  *
- * Un reloj obliga a leer un número y hacer una cuenta mientras hablas; una
- * barra se entiende de reojo, que es todo el tiempo de atención que le sobra
- * a alguien leyendo en voz alta. Se vacía por la izquierda: lo que queda se
- * va apretando contra el final.
+ * Un reloj obliga a leer un número y hacer una cuenta mientras hablas; esto
+ * se capta de reojo, que es toda la atención que le sobra a alguien leyendo
+ * en voz alta. Un solo color y pegada al filo: es un dato de fondo, no un
+ * elemento más que mirar.
  */
 function BarraDeTiempo({ restante }: { restante: number }) {
-  const terminado = restante <= 0;
-  const acabando = restante < 0.15;
-
   return (
-    <div className="flex w-full flex-col items-center gap-2">
-      <div className="flex h-[5px] w-full justify-end overflow-hidden rounded-full bg-lavanda-100/12">
-        <span
-          className="h-full rounded-full transition-[width] duration-200 ease-linear"
-          style={{
-            width: `${restante * 100}%`,
-            background: acabando
-              ? "var(--color-rosa-400)"
-              : "linear-gradient(90deg,#7ED1C1,#A26DBE)",
-          }}
-        />
-      </div>
-
-      <p
-        className={`text-[13px] ${
-          terminado ? "text-rosa-400" : "text-lavanda-100/55"
-        }`}
-      >
-        {terminado
-          ? "Cuando termines, se detiene sola"
-          : acabando
-            ? "Última frase"
-            : "Tómate tu tiempo"}
-      </p>
+    <div className="absolute inset-x-0 bottom-0 flex h-[3px] justify-end bg-lavanda-100/10">
+      <span
+        className="h-full bg-menta-400 transition-[width] duration-200 ease-linear"
+        style={{ width: `${Math.max(0, restante) * 100}%` }}
+      />
     </div>
   );
 }
@@ -247,12 +225,17 @@ export function Grabador({
           después de leer el texto ya no sirven de nada. */}
       {estado === "listo" && <ComoLeerlo />}
 
-      <div className="min-h-0 flex-1 rounded-[22px] border border-lavanda-100/15 bg-white/5 px-[22px] py-5">
+      {/* La barra vive en el filo de la caja del texto: es un dato de fondo,
+          no un elemento más que mirar mientras se lee. */}
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-[22px] border border-lavanda-100/15 bg-white/5 px-[22px] py-5">
         <Karaoke
           frases={frases}
           grabando={estado === "grabando"}
           transcurridoMs={transcurrido}
         />
+        {estado === "grabando" && (
+          <BarraDeTiempo restante={1 - transcurrido / duracionGuionMs} />
+        )}
       </div>
 
       {error && <p className="text-sm text-rosa-400">{error}</p>}
@@ -272,9 +255,11 @@ export function Grabador({
                 />
               ))}
             </div>
-            <BarraDeTiempo
-              restante={Math.max(0, 1 - transcurrido / duracionGuionMs)}
-            />
+            {transcurrido >= duracionGuionMs && (
+              <p className="text-[13px] text-rosa-400">
+                Cuando termines, se detiene sola
+              </p>
+            )}
           </>
         )}
 
