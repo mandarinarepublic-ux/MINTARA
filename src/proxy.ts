@@ -36,9 +36,10 @@ export async function proxy(peticion: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const privada = /^\/(audios|estudio|grabar|mezclar|cuenta|consentimiento)/.test(
-    peticion.nextUrl.pathname,
-  );
+  const privada =
+    /^\/(audios|estudio|grabar|mezclar|cuenta|consentimiento|admin)/.test(
+      peticion.nextUrl.pathname,
+    );
 
   if (privada && !user) {
     const destino = peticion.nextUrl.clone();

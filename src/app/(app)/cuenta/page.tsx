@@ -14,7 +14,7 @@ export default async function Cuenta() {
 
   const { data: perfil } = await supabase
     .from("perfiles")
-    .select("celular, plan")
+    .select("celular, plan, rol")
     .eq("id", user.id)
     .single();
 
@@ -69,6 +69,15 @@ export default async function Cuenta() {
           </button>
         </form>
       </div>
+
+      {perfil?.rol === "admin" && (
+        <Link
+          href="/admin"
+          className="rounded-[18px] border border-oro-500/40 bg-oro-500/10 px-5 py-4 text-center text-[15px] text-oro-500 transition hover:border-oro-500"
+        >
+          Administrar ambientes
+        </Link>
+      )}
 
       <Link
         href="/privacidad"

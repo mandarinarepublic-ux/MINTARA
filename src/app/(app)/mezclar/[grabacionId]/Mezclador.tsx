@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Reproductor } from "@/lib/audio/reproductor";
 import { construirPlan, type Frase } from "@/lib/audio/plan";
-import { FONDOS, rutaDeFondo, nombreDeFondo } from "@/lib/audio/fondos";
+import type { Ambiente, FamiliaConAmbientes } from "@/lib/ambientes";
 import { guardarParaSinInternet, estaGuardado } from "@/lib/sinInternet";
 import { puedeUsarSinInternet, type Plan } from "@/lib/planes";
 import { guardarCortes } from "./acciones";
@@ -30,14 +30,21 @@ export function Mezclador({
   titulo,
   vozUrl,
   cortesGuardados,
-  fondosPermitidos,
+  familias,
+  permitidos,
+  urlDe,
   planUsuario,
 }: {
   grabacionId: string;
   titulo: string;
   vozUrl: string;
   cortesGuardados: Frase[] | null;
-  fondosPermitidos: string[];
+  /** Los grupos que ve el cliente, con sus variantes dentro. */
+  familias: FamiliaConAmbientes[];
+  /** Identificadores de los ambientes que su plan le deja usar. */
+  permitidos: string[];
+  /** Dirección del audio de cada ambiente, resuelta en el servidor. */
+  urlDe: Record<string, string>;
   planUsuario: Plan;
 }) {
   const reproductor = useRef<Reproductor | null>(null);
@@ -46,7 +53,13 @@ export function Mezclador({
   const urlVoz = useRef<string | null>(null);
   const urlFondo = useRef<string | null>(null);
 
-  const [fondo, setFondo] = useState(fondosPermitidos[0] ?? "lluvia");
+  /** Primer ambiente que la persona sí puede usar. */
+  const primero =
+    familias.flatMap((f) => f.ambientes).find((a) => permitidos.includes(a.id)) ??
+    familias[0]?.ambientes[0];
+
+  const [ambiente, setAmbiente] = useState<Ambiente | undefined>(primero);
+  const [familiaAbierta, setFamiliaAbierta] = useState(primero?.familia ?? "");
   const [vozVolumen, setVozVolumen] = useState(0.9);
   const [fondoVolumen, setFondoVolumen] = useState(0.35);
   const [pausa, setPausa] = useState(2);
@@ -68,7 +81,7 @@ export function Mezclador({
     const r = new Reproductor();
     reproductor.current = r;
 
-    r.cargar(vozUrl, rutaDeFondo(fondo))
+    r.cargar(vozUrl, ambiente ? urlDe[ambiente.id] : "")
       .then(() => {
         if ((cortesGuardados ?? []).length === 0) {
           const detectadas = r.analizarFrases();
@@ -100,13 +113,13 @@ export function Mezclador({
   const planActual = useCallback(
     () =>
       construirPlan(frases, {
-        fondo,
+        fondo: ambiente?.id ?? "",
         gananciaVoz: vozVolumen,
         gananciaFondo: fondoVolumen,
         pausaSeg: pausa,
         orden: "original",
       }),
-    [frases, fondo, vozVolumen, fondoVolumen, pausa],
+    [frases, ambiente, vozVolumen, fondoVolumen, pausa],
   );
 
   /** Arma ambas pistas con los volúmenes ya aplicados dentro. */
@@ -138,7 +151,7 @@ export function Mezclador({
     navigator.mediaSession.metadata = new MediaMetadata({
       title: titulo,
       artist: "Tu voz · Míntara",
-      album: nombreDeFondo(fondo),
+      album: ambiente?.nombre ?? "Míntara",
       artwork: [
         { src: "/marca/mintara-icon.png", sizes: "512x512", type: "image/png" },
       ],
@@ -223,24 +236,23 @@ export function Mezclador({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vozVolumen, fondoVolumen, pausa, estudio]);
 
-  async function cambiarFondo(id: string) {
-    setFondo(id);
+  async function cambiarAmbiente(nuevo: Ambiente) {
+    setAmbiente(nuevo);
     setCargando(true);
     const seguia = sonando;
-    const posicion = pistaVoz.current?.currentTime ?? 0;
     parar();
     try {
-      await reproductor.current!.cambiarFondo(rutaDeFondo(id));
+      await reproductor.current!.cambiarFondo(urlDe[nuevo.id]);
       await armar();
-      pistaVoz.current!.currentTime = posicion;
-      pistaFondo.current!.currentTime = posicion;
+      pistaVoz.current!.currentTime = 0;
+      pistaFondo.current!.currentTime = 0;
       setCargando(false);
       if (seguia) {
         await Promise.all([pistaVoz.current!.play(), pistaFondo.current!.play()]);
         setSonando(true);
       }
     } catch {
-      setError(`El ambiente ${nombreDeFondo(id)} todavía no está disponible.`);
+      setError(`No pudimos cargar "${nuevo.nombre}". Intenta con otro.`);
       setCargando(false);
     }
   }
@@ -248,7 +260,11 @@ export function Mezclador({
   async function guardarEnElCelular() {
     setGuardando(true);
     try {
-      await guardarParaSinInternet(grabacionId, vozUrl, fondosPermitidos);
+      await guardarParaSinInternet(
+        grabacionId,
+        vozUrl,
+        permitidos.map((id) => urlDe[id]).filter(Boolean),
+      );
       setGuardado(true);
     } catch {
       setError("No pudimos guardarlo en tu celular. Puede faltar espacio.");
@@ -320,27 +336,58 @@ export function Mezclador({
 
         <div className="flex flex-col gap-3 border-t border-lavanda-100/15 pt-[18px]">
           <span className="etiqueta text-lavanda-100/60">Ambiente</span>
+
+          {/* Primero la familia: lluvia, río o mar. */}
           <div className="flex flex-wrap gap-2">
-            {FONDOS.map((f) => {
-              const permitido = fondosPermitidos.includes(f.id);
-              const activo = f.id === fondo;
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => permitido && cambiarFondo(f.id)}
-                  disabled={!permitido || ocupado}
-                  title={permitido ? f.para : "Disponible con Premium"}
-                  className={`rounded-full border px-4 py-2 text-[13px] transition active:scale-[0.97] ${
-                    activo
-                      ? "border-transparent bg-menta-400 text-violeta-600"
-                      : "border-lavanda-100/25 text-lavanda-100/80 hover:border-menta-400 hover:text-menta-400"
-                  } ${permitido ? "" : "opacity-40"}`}
-                >
-                  {f.nombre}
-                </button>
-              );
-            })}
+            {familias.map((f) => (
+              <button
+                key={f.slug}
+                onClick={() => setFamiliaAbierta(f.slug)}
+                disabled={ocupado}
+                title={f.descripcion}
+                className={`rounded-full border px-4 py-2 text-[13px] transition active:scale-[0.97] ${
+                  f.slug === familiaAbierta
+                    ? "border-transparent bg-menta-400 text-violeta-600"
+                    : "border-lavanda-100/25 text-lavanda-100/80 hover:border-menta-400 hover:text-menta-400"
+                }`}
+              >
+                {f.nombre}
+              </button>
+            ))}
           </div>
+
+          {/* Y dentro, sus variantes. */}
+          {(() => {
+            const abierta = familias.find((f) => f.slug === familiaAbierta);
+            if (!abierta) return null;
+            return (
+              <>
+                <p className="text-[12px] text-lavanda-100/55">
+                  {abierta.descripcion}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {abierta.ambientes.map((a) => {
+                    const permitido = permitidos.includes(a.id);
+                    return (
+                      <button
+                        key={a.id}
+                        onClick={() => permitido && cambiarAmbiente(a)}
+                        disabled={!permitido || ocupado}
+                        title={permitido ? a.nombre : "Disponible con Premium"}
+                        className={`rounded-full border px-3.5 py-1.5 text-[12px] transition active:scale-[0.97] ${
+                          a.id === ambiente?.id
+                            ? "border-rosa-400 text-rosa-400"
+                            : "border-lavanda-100/20 text-lavanda-100/70"
+                        } ${permitido ? "" : "opacity-40"}`}
+                      >
+                        {a.nombre}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
 
@@ -369,7 +416,7 @@ export function Mezclador({
 
         <label className="flex flex-col gap-2">
           <span className="flex items-baseline justify-between text-[13px] text-lavanda-100/70">
-            <span>{nombreDeFondo(fondo)}</span>
+            <span>{ambiente?.nombre ?? "Ambiente"}</span>
             <span className="mono text-lavanda-100/50">
               {Math.round(fondoVolumen * 100)}%
             </span>

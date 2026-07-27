@@ -1,7 +1,3 @@
-// Con extensión .ts: el runner de Node no resuelve imports sin extensión, y
-// este módulo lo alcanzan las pruebas.
-import { rutaDeFondo } from "./audio/fondos.ts";
-
 /**
  * Guardado en el celular para escuchar sin internet.
  *
@@ -9,24 +5,25 @@ import { rutaDeFondo } from "./audio/fondos.ts";
  * espacio de la app, no en la carpeta de descargas del teléfono, así que
  * sigue sin existir un archivo que se pueda mandar a otra persona.
  *
- * Las dos funciones puras (nombre del cajón y lista de URLs) están
+ * Las dos funciones puras (nombre del cajón y lista de direcciones) están
  * separadas para poder probarlas sin navegador.
  */
 export function nombreDeCache(grabacionId: string): string {
   return `MINTARA-${grabacionId}`;
 }
 
-export function urlsAGuardar(vozUrl: string, fondos: string[]): string[] {
-  return [vozUrl, ...fondos.map(rutaDeFondo)];
+/** La voz y los ambientes que la persona puede usar, todos en una lista. */
+export function urlsAGuardar(vozUrl: string, urlsDeAmbientes: string[]): string[] {
+  return [vozUrl, ...urlsDeAmbientes];
 }
 
 export async function guardarParaSinInternet(
   grabacionId: string,
   vozUrl: string,
-  fondos: string[],
+  urlsDeAmbientes: string[],
 ): Promise<void> {
   const cajon = await caches.open(nombreDeCache(grabacionId));
-  await cajon.addAll(urlsAGuardar(vozUrl, fondos));
+  await cajon.addAll(urlsAGuardar(vozUrl, urlsDeAmbientes));
 }
 
 export async function estaGuardado(grabacionId: string): Promise<boolean> {

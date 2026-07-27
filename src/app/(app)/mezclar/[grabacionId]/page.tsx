@@ -1,7 +1,15 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { supabaseServidor } from "@/lib/supabase/servidor";
-import { fondosPermitidos, type Plan } from "@/lib/planes";
+import { exigirEntorno } from "@/lib/entorno";
+import { type Plan } from "@/lib/planes";
+import {
+  agruparPorFamilia,
+  ambientesPermitidos,
+  urlDeAmbiente,
+  type Ambiente,
+  type Familia,
+} from "@/lib/ambientes";
 import { Mezclador } from "./Mezclador";
 
 export default async function Mezclar({
@@ -16,11 +24,17 @@ export default async function Mezclar({
   } = await supabase.auth.getUser();
   if (!user) redirect("/ingresar");
 
-  const { data: grabacion } = await supabase
-    .from("grabaciones")
-    .select("id, ruta_master, cortes, textos(nombre)")
-    .eq("id", grabacionId)
-    .single();
+  const [{ data: grabacion }, { data: perfil }, { data: familias }, { data: ambientes }] =
+    await Promise.all([
+      supabase
+        .from("grabaciones")
+        .select("id, ruta_master, cortes, textos(nombre)")
+        .eq("id", grabacionId)
+        .single(),
+      supabase.from("perfiles").select("plan").eq("id", user.id).single(),
+      supabase.from("familias").select("*").order("orden"),
+      supabase.from("ambientes").select("*").order("orden"),
+    ]);
 
   if (!grabacion?.ruta_master) notFound();
 
@@ -29,14 +43,8 @@ export default async function Mezclar({
   const titulo =
     (grabacion.textos as { nombre?: string } | null)?.nombre ?? "Mi audio";
 
-  const { data: perfil } = await supabase
-    .from("perfiles")
-    .select("plan")
-    .eq("id", user.id)
-    .single();
-
   // URL firmada de una hora: la voz nunca se sirve por una dirección
-  // pública ni adivinable.
+  // pública ni adivinable. Los ambientes sí son públicos: son lluvia y mar.
   const { data: firmada } = await supabase.storage
     .from("voces")
     .createSignedUrl(grabacion.ruta_master, 3600);
@@ -44,6 +52,13 @@ export default async function Mezclar({
   if (!firmada) notFound();
 
   const plan = (perfil?.plan ?? "gratis") as Plan;
+  const listaFamilias = (familias ?? []) as Familia[];
+  const listaAmbientes = (ambientes ?? []) as Ambiente[];
+
+  const urlSupabase = exigirEntorno("NEXT_PUBLIC_SUPABASE_URL");
+  const urlDe = Object.fromEntries(
+    listaAmbientes.map((a) => [a.id, urlDeAmbiente(a.ruta, urlSupabase)]),
+  );
 
   return (
     <main className="mx-auto w-full max-w-[402px] px-[22px] py-8 md:max-w-[520px]">
@@ -69,7 +84,9 @@ export default async function Mezclar({
           titulo={titulo}
           vozUrl={firmada.signedUrl}
           cortesGuardados={grabacion.cortes}
-          fondosPermitidos={fondosPermitidos(plan)}
+          familias={agruparPorFamilia(listaFamilias, listaAmbientes)}
+          permitidos={ambientesPermitidos(listaAmbientes, plan).map((a) => a.id)}
+          urlDe={urlDe}
           planUsuario={plan}
         />
       </div>

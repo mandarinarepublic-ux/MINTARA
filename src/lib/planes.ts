@@ -15,7 +15,6 @@ export const LIMITES = {
   gratis: {
     audios: 1,
     segundos: 60,
-    fondos: ["lluvia"],
     sinInternet: false,
   },
   premium: {
@@ -23,10 +22,15 @@ export const LIMITES = {
     // cuenta comprometida llene el almacenamiento sin freno.
     audios: 500,
     segundos: 600,
-    fondos: ["lluvia", "rio", "mar"],
     sinInternet: true,
   },
 } as const;
+
+/*
+ * Qué ambientes ve cada plan ya NO se decide aquí: cada ambiente lleva su
+ * propia marca de "gratis" y la pone el admin desde el panel. Ver
+ * `ambientesPermitidos` en lib/ambientes.ts.
+ */
 
 export const PRECIOS = {
   mensual: { monto: 6.99, moneda: "USD", etiqueta: "$6,99 / mes" },
@@ -39,10 +43,6 @@ export function puedeGrabar(plan: Plan, audiosActuales: number): boolean {
 
 export function duracionMaximaSeg(plan: Plan): number {
   return LIMITES[plan].segundos;
-}
-
-export function fondosPermitidos(plan: Plan): string[] {
-  return [...LIMITES[plan].fondos];
 }
 
 export function puedeUsarSinInternet(plan: Plan): boolean {
