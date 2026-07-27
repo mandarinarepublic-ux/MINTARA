@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseNavegador } from "@/lib/supabase/cliente";
 import { formatoSoportado, extensionDe } from "@/lib/audio/grabacion";
+import { Karaoke, ComoLeerlo } from "./Karaoke";
 
 type Estado = "listo" | "grabando" | "revisando" | "subiendo";
 
@@ -163,20 +164,15 @@ export function Grabador({
 
   return (
     <div className="flex min-h-[70dvh] flex-col gap-6">
-      <div className="flex flex-col gap-4 rounded-[22px] border border-lavanda-100/15 bg-white/5 px-[22px] py-[26px]">
-        {frases.map((f, i) => (
-          <p
-            key={i}
-            className={`display leading-[1.5] ${
-              i === 0
-                ? "text-[23px] text-crema-50"
-                : "border-t border-lavanda-100/10 pt-4 text-[15px] text-lavanda-100/55"
-            }`}
-          >
-            {f}
-          </p>
-        ))}
+      <div className="rounded-[22px] border border-lavanda-100/15 bg-white/5 px-[22px] py-[26px]">
+        <Karaoke
+          frases={frases}
+          grabando={estado === "grabando"}
+          transcurridoMs={transcurrido}
+        />
       </div>
+
+      {estado === "listo" && <ComoLeerlo />}
 
       {error && <p className="text-sm text-rosa-400">{error}</p>}
 
