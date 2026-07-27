@@ -3,7 +3,7 @@ import Link from "next/link";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import { ocultarCelular } from "@/lib/telefono";
 import { planEfectivo, LIMITES, PRECIOS, type Plan } from "@/lib/planes";
-import { borrarTodo } from "./acciones";
+import { ZonaPeligrosa } from "./ZonaPeligrosa";
 
 export default async function Cuenta() {
   const supabase = await supabaseServidor();
@@ -66,12 +66,9 @@ export default async function Cuenta() {
           Tus grabaciones son solo tuyas. No se comparten, no se usan para nada
           más y nadie de nuestro equipo las escucha.
         </p>
-        <form action={borrarTodo} className="mt-4">
-          <button className="text-[13px] text-menta-400 hover:underline">
-            Borrar mi voz y mi cuenta para siempre
-          </button>
-        </form>
       </div>
+
+      <ZonaPeligrosa audios={count ?? 0} />
 
       {perfil?.rol === "admin" && (
         <Link

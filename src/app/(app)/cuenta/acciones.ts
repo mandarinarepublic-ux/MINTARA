@@ -19,11 +19,56 @@ export async function pedirDesbloqueo(): Promise<void> {
 }
 
 /**
- * Borra todo: voces, textos y perfil. Sin retenciones de cortesía.
+ * Borra los archivos de voz de alguien.
+ *
+ * Storage no tiene borrado recursivo, así que hay que recorrer carpeta por
+ * carpeta. Se usa tanto para borrar solo los audios como para borrar la
+ * cuenta entera.
+ */
+async function borrarArchivosDeVoz(
+  supabase: Awaited<ReturnType<typeof supabaseServidor>>,
+  usuarioId: string,
+): Promise<void> {
+  const { data: carpetas } = await supabase.storage
+    .from("voces")
+    .list(usuarioId, { limit: 100 });
+
+  for (const carpeta of carpetas ?? []) {
+    const { data: dentro } = await supabase.storage
+      .from("voces")
+      .list(`${usuarioId}/${carpeta.name}`, { limit: 100 });
+    const rutas = (dentro ?? []).map(
+      (a) => `${usuarioId}/${carpeta.name}/${a.name}`,
+    );
+    if (rutas.length) await supabase.storage.from("voces").remove(rutas);
+  }
+}
+
+/**
+ * Borra las grabaciones, pero deja la cuenta en pie.
+ *
+ * Existe porque querer empezar de cero con lo grabado es corriente, y antes
+ * costaba la cuenta entera: el único botón que había borraba todo.
+ */
+export async function borrarAudios(): Promise<void> {
+  const supabase = await supabaseServidor();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/ingresar");
+
+  await borrarArchivosDeVoz(supabase, user.id);
+  await supabase.from("grabaciones").delete().eq("perfil_id", user.id);
+
+  redirect("/audios");
+}
+
+/**
+ * Borra todo: voces, textos, grabaciones y cuenta. Sin retenciones de
+ * cortesía y sin vuelta atrás.
  *
  * Las tablas caen solas porque todo cuelga de `perfiles` con
- * `on delete cascade`; los archivos hay que borrarlos a mano, carpeta por
- * carpeta, porque Storage no tiene borrado recursivo.
+ * `on delete cascade`; los archivos hay que borrarlos a mano.
  */
 export async function borrarTodo(): Promise<void> {
   const supabase = await supabaseServidor();
@@ -32,18 +77,7 @@ export async function borrarTodo(): Promise<void> {
   } = await supabase.auth.getUser();
   if (!user) redirect("/ingresar");
 
-  const { data: carpetas } = await supabase.storage
-    .from("voces")
-    .list(user.id, { limit: 100 });
-
-  for (const carpeta of carpetas ?? []) {
-    const { data: dentro } = await supabase.storage
-      .from("voces")
-      .list(`${user.id}/${carpeta.name}`, { limit: 100 });
-    const rutas = (dentro ?? []).map((a) => `${user.id}/${carpeta.name}/${a.name}`);
-    if (rutas.length) await supabase.storage.from("voces").remove(rutas);
-  }
-
+  await borrarArchivosDeVoz(supabase, user.id);
   await supabase.from("perfiles").delete().eq("id", user.id);
   await supabase.auth.signOut();
   redirect("/");
