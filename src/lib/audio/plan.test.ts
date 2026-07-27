@@ -14,6 +14,8 @@ const AJUSTES: AjustesAudio = {
   gananciaVoz: 1,
   gananciaFondo: 0.35,
   pausaSeg: 2,
+  entradaSeg: ENTRADA_FONDO,
+  salidaSeg: SALIDA_FONDO,
   orden: "original",
 };
 
@@ -129,4 +131,48 @@ test("rechaza pausas negativas", () => {
 
 test("rechaza frases con fin anterior al inicio", () => {
   assert.throws(() => construirPlan([{ inicio: 5, fin: 2 }], AJUSTES));
+});
+
+// ---------------------------------------------------------------------
+// Entrada y salida ajustables
+// ---------------------------------------------------------------------
+
+test("la voz espera a que termine de entrar el ambiente", () => {
+  const plan = construirPlan(FRASES, { ...AJUSTES, entradaSeg: 6 });
+  assert.equal(plan.voz[0].entraEn, 6);
+  assert.equal(plan.fondo.entrada, 6);
+});
+
+test("una salida larga alarga la pieza, no corta la última frase", () => {
+  const corta = construirPlan(FRASES, { ...AJUSTES, salidaSeg: 3 });
+  const larga = construirPlan(FRASES, { ...AJUSTES, salidaSeg: 20 });
+
+  const finDeLaVoz = (p: typeof corta) => {
+    const u = p.voz[p.voz.length - 1];
+    return u.entraEn + (u.hasta - u.desde);
+  };
+
+  // La voz termina en el mismo instante en las dos; lo que cambia es cuánto
+  // sigue sonando el ambiente después.
+  assert.equal(finDeLaVoz(corta), finDeLaVoz(larga));
+  assert.equal(larga.duracionTotal - corta.duracionTotal, 17);
+  assert.ok(larga.duracionTotal > finDeLaVoz(larga));
+});
+
+test("sin entrada ni salida, la voz arranca de inmediato", () => {
+  const plan = construirPlan(FRASES, { ...AJUSTES, entradaSeg: 0, salidaSeg: 0 });
+  assert.equal(plan.voz[0].entraEn, 0);
+  assert.equal(plan.duracionTotal, 4 + 3 + 2 + 2 * 2);
+});
+
+test("rechaza entradas y salidas negativas o absurdas", () => {
+  assert.throws(() => construirPlan(FRASES, { ...AJUSTES, entradaSeg: -1 }));
+  assert.throws(() => construirPlan(FRASES, { ...AJUSTES, salidaSeg: -1 }));
+  assert.throws(() => construirPlan(FRASES, { ...AJUSTES, entradaSeg: 61 }));
+  assert.throws(() => construirPlan(FRASES, { ...AJUSTES, salidaSeg: 121 }));
+});
+
+test("los desvanecidos por defecto siguen siendo los de siempre", () => {
+  assert.equal(ENTRADA_FONDO, 2);
+  assert.equal(SALIDA_FONDO, 3);
 });

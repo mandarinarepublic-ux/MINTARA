@@ -22,6 +22,10 @@ export type AjustesAudio = {
   gananciaVoz: number;
   gananciaFondo: number;
   pausaSeg: number;
+  /** Segundos que tarda el ambiente en aparecer, antes de la primera palabra. */
+  entradaSeg: number;
+  /** Segundos que tarda en apagarse al final, ya sin voz. Es lo que deja dormir. */
+  salidaSeg: number;
   orden: "original" | "barajado";
 };
 
@@ -39,10 +43,14 @@ export type PlanDeMezcla = {
   fondo: { pista: string; ganancia: number; entrada: number; salida: number };
 };
 
-/** Segundos de fondo solo, antes de la primera palabra. */
+/** Entrada por defecto: segundos de ambiente solo antes de la primera palabra. */
 export const ENTRADA_FONDO = 2;
-/** Segundos de fondo solo, después de la última palabra. */
+/** Salida por defecto: segundos de ambiente solo tras la última palabra. */
 export const SALIDA_FONDO = 3;
+
+/** Topes de los desvanecidos. Más allá deja de ser una transición. */
+const ENTRADA_MAXIMA = 60;
+const SALIDA_MAXIMA = 120;
 
 export function construirPlan(
   frases: Frase[],
@@ -60,6 +68,12 @@ export function construirPlan(
   if (ajustes.pausaSeg < 0) {
     throw new Error("La pausa no puede ser negativa");
   }
+  if (ajustes.entradaSeg < 0 || ajustes.entradaSeg > ENTRADA_MAXIMA) {
+    throw new Error(`La entrada debe estar entre 0 y ${ENTRADA_MAXIMA} segundos`);
+  }
+  if (ajustes.salidaSeg < 0 || ajustes.salidaSeg > SALIDA_MAXIMA) {
+    throw new Error(`La salida debe estar entre 0 y ${SALIDA_MAXIMA} segundos`);
+  }
   for (const f of frases) {
     if (f.fin <= f.inicio) {
       throw new Error(
@@ -74,7 +88,7 @@ export function construirPlan(
       : frases.map((_, i) => i);
 
   const voz: BloqueVoz[] = [];
-  let reloj = ENTRADA_FONDO;
+  let reloj = ajustes.entradaSeg;
 
   indices.forEach((indice, posicion) => {
     const f = frases[indice];
@@ -89,14 +103,14 @@ export function construirPlan(
   });
 
   return {
-    duracionTotal: redondear(reloj + SALIDA_FONDO),
+    duracionTotal: redondear(reloj + ajustes.salidaSeg),
     voz,
     gananciaVoz: ajustes.gananciaVoz,
     fondo: {
       pista: ajustes.fondo,
       ganancia: ajustes.gananciaFondo,
-      entrada: ENTRADA_FONDO,
-      salida: SALIDA_FONDO,
+      entrada: ajustes.entradaSeg,
+      salida: ajustes.salidaSeg,
     },
   };
 }

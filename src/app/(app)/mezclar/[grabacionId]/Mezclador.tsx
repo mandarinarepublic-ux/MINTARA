@@ -1,7 +1,12 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Reproductor } from "@/lib/audio/reproductor";
-import { construirPlan, type Frase } from "@/lib/audio/plan";
+import {
+  construirPlan,
+  ENTRADA_FONDO,
+  SALIDA_FONDO,
+  type Frase,
+} from "@/lib/audio/plan";
 import type { Ambiente, FamiliaConAmbientes } from "@/lib/ambientes";
 import { guardarParaSinInternet, estaGuardado } from "@/lib/sinInternet";
 import { puedeUsarSinInternet, type Plan } from "@/lib/planes";
@@ -63,6 +68,8 @@ export function Mezclador({
   const [vozVolumen, setVozVolumen] = useState(0.9);
   const [fondoVolumen, setFondoVolumen] = useState(0.35);
   const [pausa, setPausa] = useState(2);
+  const [entrada, setEntrada] = useState(ENTRADA_FONDO);
+  const [salida, setSalida] = useState(SALIDA_FONDO);
   const [estudio, setEstudio] = useState(true);
 
   const [frases, setFrases] = useState<Frase[]>(cortesGuardados ?? []);
@@ -117,9 +124,11 @@ export function Mezclador({
         gananciaVoz: vozVolumen,
         gananciaFondo: fondoVolumen,
         pausaSeg: pausa,
+        entradaSeg: entrada,
+        salidaSeg: salida,
         orden: "original",
       }),
-    [frases, ambiente, vozVolumen, fondoVolumen, pausa],
+    [frases, ambiente, vozVolumen, fondoVolumen, pausa, entrada, salida],
   );
 
   /** Arma ambas pistas con los volúmenes ya aplicados dentro. */
@@ -234,7 +243,7 @@ export function Mezclador({
 
     return () => clearTimeout(temporizador);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vozVolumen, fondoVolumen, pausa, estudio]);
+  }, [vozVolumen, fondoVolumen, pausa, entrada, salida, estudio]);
 
   async function cambiarAmbiente(nuevo: Ambiente) {
     setAmbiente(nuevo);
@@ -447,6 +456,56 @@ export function Mezclador({
           className="accent-lila-400"
         />
       </label>
+
+      {/*
+        Entrada y salida. La salida llega hasta dos minutos a propósito: es
+        lo que convierte el audio en algo con lo que dormirse, apagándose
+        solo mucho después de la última palabra.
+      */}
+      <div className="flex flex-col gap-5 rounded-[18px] border border-lavanda-100/15 bg-white/5 px-5 py-5">
+        <p className="etiqueta text-lavanda-100/60">Entrada y salida</p>
+
+        <label className="flex flex-col gap-2">
+          <span className="flex items-baseline justify-between text-[13px] text-lavanda-100/70">
+            <span>Aparece en</span>
+            <span className="mono text-lavanda-100/50">{entrada.toFixed(0)} s</span>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={20}
+            step={1}
+            value={entrada}
+            onChange={(e) => setEntrada(Number(e.target.value))}
+            className="accent-lila-400"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="flex items-baseline justify-between text-[13px] text-lavanda-100/70">
+            <span>Se apaga en</span>
+            <span className="mono text-lavanda-100/50">
+              {salida >= 60
+                ? `${Math.floor(salida / 60)}:${String(salida % 60).padStart(2, "0")}`
+                : `${salida.toFixed(0)} s`}
+            </span>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={120}
+            step={5}
+            value={salida}
+            onChange={(e) => setSalida(Number(e.target.value))}
+            className="accent-menta-400"
+          />
+        </label>
+
+        <p className="text-[12px] leading-relaxed text-lavanda-100/50">
+          El ambiente entra antes de tu primera palabra y sigue sonando después
+          de la última. Alarga la salida si quieres quedarte dormida con él.
+        </p>
+      </div>
 
       <div className="flex items-center justify-between rounded-[18px] border border-lavanda-100/15 bg-white/5 px-5 py-4">
         <div>
