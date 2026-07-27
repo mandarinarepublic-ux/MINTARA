@@ -1,9 +1,22 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseNavegador } from "@/lib/supabase/cliente";
 import { formatoSoportado, extensionDe } from "@/lib/audio/grabacion";
 import { Karaoke, ComoLeerlo } from "./Karaoke";
+import { construirGuion, duracionDelGuion } from "@/lib/audio/interpretacion";
+
+/**
+ * Cuánto silencio hay que dejar para que la grabación se corte sola.
+ *
+ * Va por silencio y no por reloj a propósito: si parara al acabarse el guion,
+ * quien lee más despacio —que es lo que queremos— se quedaría cortado a media
+ * frase.
+ */
+const SILENCIO_PARA_PARAR_MS = 2000;
+
+/** Por debajo de esto se considera que ya no habla nadie. */
+const UMBRAL_DE_SILENCIO = 0.06;
 
 type Estado = "listo" | "grabando" | "revisando" | "subiendo";
 
@@ -40,6 +53,13 @@ export function Grabador({
   const contexto = useRef<AudioContext | null>(null);
   const animacion = useRef<number | null>(null);
   const inicio = useRef<number>(0);
+  /** Desde cuándo no se oye nada. null si está hablando. */
+  const callado = useRef<number | null>(null);
+  /** Si ya habló alguna vez: sin esto pararía antes de empezar. */
+  const yaHablo = useRef(false);
+
+  const guion = useMemo(() => construirGuion(frases), [frases]);
+  const duracionGuionMs = duracionDelGuion(guion) * 1000;
 
   // Se limpia todo al salir: un micrófono que sigue abierto deja el punto
   // rojo encendido en el teléfono y asusta, con razón.
@@ -63,12 +83,31 @@ export function Grabador({
     }
 
     setNiveles((antes) => [...antes.slice(1), Math.max(0.06, Math.min(1, pico * 1.8))]);
-    setTranscurrido(Date.now() - inicio.current);
 
-    if (Date.now() - inicio.current >= segundosMaximos * 1000) {
+    const ahora = Date.now();
+    const llevaGrabando = ahora - inicio.current;
+    setTranscurrido(llevaGrabando);
+
+    // Se para sola cuando se acaba de hablar: hay que haber dicho algo, haber
+    // llegado al final del guion, y llevar callado el margen acordado.
+    if (pico >= UMBRAL_DE_SILENCIO) {
+      yaHablo.current = true;
+      callado.current = null;
+    } else if (callado.current === null) {
+      callado.current = ahora;
+    }
+
+    const terminoElGuion = llevaGrabando >= duracionGuionMs;
+    const lleveCallado = callado.current === null ? 0 : ahora - callado.current;
+
+    if (
+      (yaHablo.current && terminoElGuion && lleveCallado >= SILENCIO_PARA_PARAR_MS) ||
+      llevaGrabando >= segundosMaximos * 1000
+    ) {
       parar();
       return;
     }
+
     animacion.current = requestAnimationFrame(dibujar);
   }
 
@@ -109,6 +148,8 @@ export function Grabador({
       grabadora.current = rec;
       rec.start();
       inicio.current = Date.now();
+      callado.current = null;
+      yaHablo.current = false;
       setTranscurrido(0);
       setEstado("grabando");
       animacion.current = requestAnimationFrame(dibujar);
@@ -160,10 +201,13 @@ export function Grabador({
     router.push(`/mezclar/${data.id}`);
   }
 
-  const quedan = segundosMaximos * 1000 - transcurrido;
 
   return (
     <div className="flex min-h-[70dvh] flex-col gap-6">
+      {/* Las instrucciones van ANTES del texto: se leen para prepararse, y
+          después de leer el texto ya no sirven de nada. */}
+      {estado === "listo" && <ComoLeerlo />}
+
       <div className="rounded-[22px] border border-lavanda-100/15 bg-white/5 px-[22px] py-[26px]">
         <Karaoke
           frases={frases}
@@ -171,8 +215,6 @@ export function Grabador({
           transcurridoMs={transcurrido}
         />
       </div>
-
-      {estado === "listo" && <ComoLeerlo />}
 
       {error && <p className="text-sm text-rosa-400">{error}</p>}
 
@@ -191,12 +233,18 @@ export function Grabador({
                 />
               ))}
             </div>
-            <p className="mono text-[15px] tracking-[0.1em] text-menta-400">
-              {reloj(transcurrido)}
-              <span className="ml-2 text-lavanda-100/45">
-                / quedan {reloj(Math.max(0, quedan))}
-              </span>
-            </p>
+            {transcurrido < duracionGuionMs ? (
+              <p className="mono text-[15px] tracking-[0.1em] text-menta-400">
+                {reloj(duracionGuionMs - transcurrido)}
+                <span className="ml-2 text-lavanda-100/45">
+                  para terminar el texto
+                </span>
+              </p>
+            ) : (
+              <p className="text-[14px] text-rosa-400">
+                Cuando termines, se detiene sola
+              </p>
+            )}
           </>
         )}
 
