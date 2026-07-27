@@ -127,6 +127,10 @@ export async function editarAmbiente(
     orden: Number(datos.get("orden") ?? 0),
   };
 
+  // Mover un audio de familia: la asignación inicial casi nunca es la buena.
+  const familiaNueva = String(datos.get("familia") ?? "").trim();
+  if (familiaNueva) cambios.familia = familiaNueva;
+
   // El audio solo cambia si se eligió uno nuevo; si no, se conserva el que ya
   // tenía. Así "guardar" tras cambiar solo el nombre no deja el ambiente mudo.
   const archivo = datos.get("audio");

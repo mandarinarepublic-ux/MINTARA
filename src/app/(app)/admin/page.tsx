@@ -83,7 +83,7 @@ export default async function Admin() {
                 <span className="text-lavanda-100/50">· {suyos.length}</span>
               </h3>
               {suyos.map((a) => (
-                <FilaAmbiente key={a.id} ambiente={a} />
+                <FilaAmbiente key={a.id} ambiente={a} familias={listaFamilias} />
               ))}
             </div>
           );

@@ -86,7 +86,13 @@ export function NuevoAmbiente({ familias }: { familias: Familia[] }) {
   );
 }
 
-export function FilaAmbiente({ ambiente }: { ambiente: Ambiente }) {
+export function FilaAmbiente({
+  ambiente,
+  familias,
+}: {
+  ambiente: Ambiente;
+  familias: Familia[];
+}) {
   const [estado, accion, pendiente] = useActionState<EstadoAdmin, FormData>(
     editarAmbiente,
     {},
@@ -110,6 +116,17 @@ export function FilaAmbiente({ ambiente }: { ambiente: Ambiente }) {
           src={`https://piingkecjgoisnxccvaa.supabase.co/storage/v1/object/public/fondos/${ambiente.ruta}`}
           className="w-full"
         />
+
+        <label className="flex flex-col gap-1.5">
+          <span className="etiqueta text-lavanda-100/60">Familia</span>
+          <select name="familia" defaultValue={ambiente.familia} className={campo}>
+            {familias.map((f) => (
+              <option key={f.slug} value={f.slug} className="bg-violeta-700">
+                {f.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <SubidorDeAudio familia={ambiente.familia} rutaActual={ambiente.ruta} />
 
