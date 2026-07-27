@@ -22,7 +22,7 @@ export default function Estudio() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[402px] px-[22px] py-10 md:max-w-[520px]">
+    <main className="mx-auto w-full max-w-[402px] px-[22px] pt-8 md:max-w-[520px]">
       <a href="/audios" className="text-[15px] text-lavanda-100/70">
         ← Mis audios
       </a>
@@ -72,15 +72,21 @@ export default function Estudio() {
           Agregar una frase mía
         </button>
 
-        {estado.error && <p className="text-sm text-rosa-400">{estado.error}</p>}
+        {/* Anclado abajo: con doce frases el botón se iba por debajo del
+            borde y parecía que no hubiera forma de seguir. */}
+        <div className="sticky bottom-0 -mx-[22px] mt-2 flex flex-col gap-2 bg-violeta-700/95 px-[22px] pb-6 pt-3 backdrop-blur">
+          {estado.error && (
+            <p className="text-sm text-rosa-400">{estado.error}</p>
+          )}
 
-        <button
-          type="submit"
-          disabled={pendiente}
-          className="mt-4 rounded-full bg-oro-500 px-6 py-3.5 font-semibold text-violeta-600 transition hover:bg-oro-400 active:scale-[0.97] disabled:opacity-50"
-        >
-          {pendiente ? "Guardando…" : "Ya está, vamos a grabar"}
-        </button>
+          <button
+            type="submit"
+            disabled={pendiente}
+            className="rounded-full bg-oro-500 px-6 py-3.5 font-semibold text-violeta-600 transition hover:bg-oro-400 active:scale-[0.97] disabled:opacity-50"
+          >
+            {pendiente ? "Guardando…" : "Ya está, vamos a grabar"}
+          </button>
+        </div>
       </form>
     </main>
   );
