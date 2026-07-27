@@ -3,6 +3,35 @@ import { construirPlan, type PlanDeMezcla, type Frase } from "./plan";
 import { calcularEnergia, detectarFrases } from "./frases";
 import { calcularGananciaNormalizacion, crearCadenaEstudio } from "./vozEstudio";
 import { codificarWav } from "./wav";
+import {
+  puntosDeAgachado,
+  generarImpulso,
+  NOTA_GRAVE_HZ,
+  NOTA_QUINTA_HZ,
+  VOLUMEN_NOTA,
+} from "./armonia";
+
+/**
+ * El desvanecido de entrada y salida, aplicado a TODA la pieza.
+ *
+ * Va en las dos pistas —voz y ambiente— porque lo que aparece y desaparece
+ * es la grabación entera, no una capa. Si solo lo llevara el ambiente, una
+ * salida larga dejaría la voz cortada en seco por debajo.
+ */
+function aplicarDesvanecido(
+  nodo: GainNode,
+  plan: PlanDeMezcla,
+  volumen: number,
+): void {
+  const { entrada, salida } = plan.fondo;
+  nodo.gain.setValueAtTime(entrada > 0 ? 0 : volumen, 0);
+  if (entrada > 0) nodo.gain.linearRampToValueAtTime(volumen, entrada);
+  nodo.gain.setValueAtTime(
+    volumen,
+    Math.max(entrada, plan.duracionTotal - salida),
+  );
+  if (salida > 0) nodo.gain.linearRampToValueAtTime(0, plan.duracionTotal);
+}
 
 /**
  * Arma la pieza completa a partir del plan de mezcla.
@@ -85,10 +114,9 @@ export class Reproductor {
   async renderizarVoz(
     plan: PlanDeMezcla,
     conEstudio = true,
-    // Solo se usa donde el navegador no deja cambiar el volumen en vivo
-    // (Safari en iPhone). En el resto vale 1 y manda el control del
-    // reproductor, que responde al instante.
     volumen = 1,
+    /** Cuánta "habitación" se oye alrededor de la voz. 0 la deja seca. */
+    espacio = 0,
   ): Promise<Blob> {
     if (!this.voz) throw new Error("Falta cargar la voz");
 
@@ -99,6 +127,34 @@ export class Reproductor {
       hz,
     );
 
+    // El desvanecido de la pieza entera vive al final de la cadena.
+    const maestro = offline.createGain();
+    maestro.connect(offline.destination);
+    aplicarDesvanecido(maestro, plan, 1);
+
+    // El espacio: una copia de la voz pasada por una habitación corta, mezclada
+    // por debajo. La voz seca sigue mandando.
+    let destinoDeLaVoz: AudioNode = maestro;
+    if (espacio > 0) {
+      const habitacion = offline.createConvolver();
+      const largo = Math.floor(offline.sampleRate * 1.2);
+      const impulso = offline.createBuffer(1, largo, offline.sampleRate);
+      // set() en vez de copyToChannel: este último exige un tipo de búfer
+      // más estrecho del que devuelve el generador.
+      impulso.getChannelData(0).set(generarImpulso(offline.sampleRate, 1.2));
+      habitacion.buffer = impulso;
+
+      const humedo = offline.createGain();
+      humedo.gain.value = espacio;
+      habitacion.connect(humedo);
+      humedo.connect(maestro);
+
+      const reparto = offline.createGain();
+      reparto.connect(maestro); // la voz tal cual
+      reparto.connect(habitacion); // y su reflejo
+      destinoDeLaVoz = reparto;
+    }
+
     const total = this.gananciaVoz * volumen;
 
     // Con estudio, la voz pasa además por el filtrado y la compresión.
@@ -106,12 +162,12 @@ export class Reproductor {
     let entrada: AudioNode;
 
     if (cadena) {
-      cadena.salida.connect(offline.destination);
+      cadena.salida.connect(destinoDeLaVoz);
       entrada = cadena.entrada;
     } else {
       const nodo = offline.createGain();
       nodo.gain.value = total;
-      nodo.connect(offline.destination);
+      nodo.connect(destinoDeLaVoz);
       entrada = nodo;
     }
 
@@ -132,7 +188,12 @@ export class Reproductor {
    * Se renderiza en vez de reproducir el mp3 en bucle para que ambas pistas
    * duren exactamente lo mismo y no se vayan separando vuelta tras vuelta.
    */
-  async renderizarFondo(plan: PlanDeMezcla, volumen = 1): Promise<Blob> {
+  async renderizarFondo(
+    plan: PlanDeMezcla,
+    volumen = 1,
+    /** La nota grave sostenida que ata voz y ambiente. */
+    conNota = false,
+  ): Promise<Blob> {
     if (!this.fondo) throw new Error("Falta cargar el fondo");
 
     const hz = this.fondo.sampleRate;
@@ -142,21 +203,49 @@ export class Reproductor {
       hz,
     );
 
-    const nodo = offline.createGain();
-    nodo.connect(offline.destination);
-    nodo.gain.setValueAtTime(0, 0);
-    nodo.gain.linearRampToValueAtTime(volumen, plan.fondo.entrada);
-    nodo.gain.setValueAtTime(
-      volumen,
-      Math.max(plan.fondo.entrada, plan.duracionTotal - plan.fondo.salida),
-    );
-    nodo.gain.linearRampToValueAtTime(0, plan.duracionTotal);
+    // El desvanecido de la pieza entera, igual que en la voz.
+    const maestro = offline.createGain();
+    maestro.connect(offline.destination);
+    aplicarDesvanecido(maestro, plan, volumen);
+
+    /*
+     * El agachado: el ambiente cede sitio mientras hay voz y vuelve en los
+     * silencios. Va en su propio nodo, antes del desvanecido, para que las
+     * dos automatizaciones no se peleen por el mismo control.
+     */
+    const agachado = offline.createGain();
+    agachado.connect(maestro);
+    const puntos = puntosDeAgachado(plan);
+    agachado.gain.setValueAtTime(1, 0);
+    for (const punto of puntos) {
+      agachado.gain.linearRampToValueAtTime(punto.valor, punto.tiempoSeg);
+    }
 
     const fuente = offline.createBufferSource();
     fuente.buffer = this.fondo;
     fuente.loop = true; // el archivo es más corto que la pieza
-    fuente.connect(nodo);
+    fuente.connect(agachado);
     fuente.start(0, 0, plan.duracionTotal);
+
+    // La nota grave no se agacha: es el suelo sobre el que se apoya todo.
+    if (conNota) {
+      const volumenNota = offline.createGain();
+      volumenNota.gain.value = VOLUMEN_NOTA;
+      volumenNota.connect(maestro);
+
+      for (const hz of [NOTA_GRAVE_HZ, NOTA_QUINTA_HZ]) {
+        const nota = offline.createOscillator();
+        nota.type = "sine";
+        nota.frequency.value = hz;
+        // La quinta, más floja: acompaña, no compite.
+        const suya = offline.createGain();
+        suya.gain.value = hz === NOTA_GRAVE_HZ ? 1 : 0.45;
+        nota.connect(suya);
+        suya.connect(volumenNota);
+        nota.start(0);
+        nota.stop(plan.duracionTotal);
+      }
+    }
 
     return this.aBlob(await offline.startRendering());
   }

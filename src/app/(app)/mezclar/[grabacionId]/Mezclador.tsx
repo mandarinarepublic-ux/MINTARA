@@ -7,6 +7,7 @@ import {
   SALIDA_FONDO,
   type Frase,
 } from "@/lib/audio/plan";
+import { ESPACIO_POR_DEFECTO } from "@/lib/audio/armonia";
 import type { Ambiente, FamiliaConAmbientes } from "@/lib/ambientes";
 import { guardarParaSinInternet, estaGuardado } from "@/lib/sinInternet";
 import { puedeUsarSinInternet, type Plan } from "@/lib/planes";
@@ -70,6 +71,8 @@ export function Mezclador({
   const [entrada, setEntrada] = useState(ENTRADA_FONDO);
   const [salida, setSalida] = useState(SALIDA_FONDO);
   const [estudio, setEstudio] = useState(true);
+  const [espacio, setEspacio] = useState(ESPACIO_POR_DEFECTO);
+  const [nota, setNota] = useState(false);
 
   const [frases, setFrases] = useState<Frase[]>(cortesGuardados ?? []);
   const [sonando, setSonando] = useState(false);
@@ -133,8 +136,8 @@ export function Mezclador({
   async function armar(): Promise<void> {
     const plan = planActual();
     const [voz, ambiente] = await Promise.all([
-      reproductor.current!.renderizarVoz(plan, estudio, vozVolumen),
-      reproductor.current!.renderizarFondo(plan, fondoVolumen),
+      reproductor.current!.renderizarVoz(plan, estudio, vozVolumen, espacio),
+      reproductor.current!.renderizarFondo(plan, fondoVolumen, nota),
     ]);
 
     if (urlVoz.current) URL.revokeObjectURL(urlVoz.current);
@@ -241,7 +244,7 @@ export function Mezclador({
 
     return () => clearTimeout(temporizador);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vozVolumen, fondoVolumen, entrada, salida, estudio]);
+  }, [vozVolumen, fondoVolumen, entrada, salida, estudio, espacio, nota]);
 
   async function cambiarAmbiente(nuevo: Ambiente) {
     setAmbiente(nuevo);
@@ -488,6 +491,55 @@ export function Mezclador({
           El ambiente entra antes de tu primera palabra y sigue sonando después
           de la última. Alarga la salida si quieres quedarte dormida con él.
         </p>
+      </div>
+
+      <div className="flex flex-col gap-5 rounded-[18px] border border-lavanda-100/15 bg-white/5 px-5 py-5">
+        <p className="etiqueta text-lavanda-100/60">Armonía</p>
+
+        <label className="flex flex-col gap-2">
+          <span className="flex items-baseline justify-between text-[13px] text-lavanda-100/70">
+            <span>Espacio alrededor de tu voz</span>
+            <span className="mono text-lavanda-100/50">
+              {Math.round(espacio * 100)}%
+            </span>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={0.5}
+            step={0.02}
+            value={espacio}
+            onChange={(e) => setEspacio(Number(e.target.value))}
+            className="accent-lila-400"
+          />
+          <span className="text-[12px] text-lavanda-100/50">
+            En cero suena pegada al micrófono; subiéndolo, como en una
+            habitación tranquila.
+          </span>
+        </label>
+
+        <div className="flex items-center justify-between border-t border-lavanda-100/10 pt-4">
+          <div>
+            <p className="text-[15px] text-crema-50">Nota grave</p>
+            <p className="text-[13px] text-lavanda-100/60">
+              Un zumbido bajo que une la voz y el ambiente
+            </p>
+          </div>
+          <button
+            onClick={() => setNota(!nota)}
+            aria-pressed={nota}
+            aria-label="Nota grave"
+            className={`flex h-[26px] w-[44px] shrink-0 items-center rounded-full px-[3px] transition ${
+              nota ? "bg-menta-400" : "bg-lavanda-100/25"
+            }`}
+          >
+            <span
+              className={`block h-5 w-5 rounded-full bg-crema-50 transition ${
+                nota ? "translate-x-[18px]" : ""
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center justify-between rounded-[18px] border border-lavanda-100/15 bg-white/5 px-5 py-4">
