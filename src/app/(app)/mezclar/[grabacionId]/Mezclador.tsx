@@ -67,7 +67,6 @@ export function Mezclador({
   const [familiaAbierta, setFamiliaAbierta] = useState(primero?.familia ?? "");
   const [vozVolumen, setVozVolumen] = useState(0.9);
   const [fondoVolumen, setFondoVolumen] = useState(0.35);
-  const [pausa, setPausa] = useState(2);
   const [entrada, setEntrada] = useState(ENTRADA_FONDO);
   const [salida, setSalida] = useState(SALIDA_FONDO);
   const [estudio, setEstudio] = useState(true);
@@ -123,12 +122,11 @@ export function Mezclador({
         fondo: ambiente?.id ?? "",
         gananciaVoz: vozVolumen,
         gananciaFondo: fondoVolumen,
-        pausaSeg: pausa,
         entradaSeg: entrada,
         salidaSeg: salida,
         orden: "original",
       }),
-    [frases, ambiente, vozVolumen, fondoVolumen, pausa, entrada, salida],
+    [frases, ambiente, vozVolumen, fondoVolumen, entrada, salida],
   );
 
   /** Arma ambas pistas con los volúmenes ya aplicados dentro. */
@@ -243,7 +241,7 @@ export function Mezclador({
 
     return () => clearTimeout(temporizador);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vozVolumen, fondoVolumen, pausa, entrada, salida, estudio]);
+  }, [vozVolumen, fondoVolumen, entrada, salida, estudio]);
 
   async function cambiarAmbiente(nuevo: Ambiente) {
     setAmbiente(nuevo);
@@ -441,21 +439,6 @@ export function Mezclador({
           />
         </label>
       </div>
-
-      <label className="flex flex-col gap-2">
-        <span className="text-[13px] text-lavanda-100/70">
-          Silencio entre frases · {pausa.toFixed(1)} s
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={8}
-          step={0.5}
-          value={pausa}
-          onChange={(e) => setPausa(Number(e.target.value))}
-          className="accent-lila-400"
-        />
-      </label>
 
       {/*
         Entrada y salida. La salida llega hasta dos minutos a propósito: es

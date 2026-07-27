@@ -1,11 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { construirPlan, ENTRADA_FONDO, SALIDA_FONDO } from "./plan.ts";
+import {
+  construirPlan,
+  ENTRADA_FONDO,
+  SALIDA_FONDO,
+  PAUSA_MAXIMA,
+} from "./plan.ts";
 import type { AjustesAudio, Frase } from "./plan.ts";
 
 const FRASES: Frase[] = [
-  { inicio: 0.0, fin: 4.0 }, // 4 s
-  { inicio: 5.2, fin: 8.2 }, // 3 s
+  { inicio: 0.0, fin: 4.0 }, // 4 s, y 1.2 s de silencio hasta la siguiente
+  { inicio: 5.2, fin: 8.2 }, // 3 s, y 0.8 s de silencio
   { inicio: 9.0, fin: 11.0 }, // 2 s
 ];
 
@@ -13,7 +18,6 @@ const AJUSTES: AjustesAudio = {
   fondo: "lluvia",
   gananciaVoz: 1,
   gananciaFondo: 0.35,
-  pausaSeg: 2,
   entradaSeg: ENTRADA_FONDO,
   salidaSeg: SALIDA_FONDO,
   orden: "original",
@@ -24,20 +28,21 @@ test("la voz no arranca en cero: el fondo entra primero", () => {
   assert.equal(plan.voz[0].entraEn, ENTRADA_FONDO);
 });
 
-test("respeta exactamente la pausa pedida entre frases", () => {
+test("conserva el silencio que la persona dejó al grabar", () => {
+  // El karaoke marca el ritmo mientras se graba, así que las pausas reales
+  // son las buenas: reinventarlas con un valor fijo borraba la interpretación.
   const plan = construirPlan(FRASES, AJUSTES);
+  const huecos = [];
   for (let i = 1; i < plan.voz.length; i++) {
     const anterior = plan.voz[i - 1];
     const finAnterior = anterior.entraEn + (anterior.hasta - anterior.desde);
-    assert.equal(
-      Number((plan.voz[i].entraEn - finAnterior).toFixed(6)),
-      AJUSTES.pausaSeg,
-    );
+    huecos.push(Number((plan.voz[i].entraEn - finAnterior).toFixed(3)));
   }
+  assert.deepEqual(huecos, [1.2, 0.8]);
 });
 
 test("dos frases nunca se pisan", () => {
-  const plan = construirPlan(FRASES, { ...AJUSTES, pausaSeg: 0 });
+  const plan = construirPlan(FRASES, AJUSTES);
   for (let i = 1; i < plan.voz.length; i++) {
     const anterior = plan.voz[i - 1];
     const finAnterior = anterior.entraEn + (anterior.hasta - anterior.desde);
@@ -48,11 +53,25 @@ test("dos frases nunca se pisan", () => {
   }
 });
 
-test("la duración total cuadra: entrada + frases + pausas + salida", () => {
+test("un silencio accidental enorme se recorta", () => {
+  // Alguien se distrae, tose, busca agua. Ese hueco no es interpretación.
+  const conBache: Frase[] = [
+    { inicio: 0, fin: 3 },
+    { inicio: 40, fin: 43 },
+  ];
+  const plan = construirPlan(conBache, AJUSTES);
+  const hueco = plan.voz[1].entraEn - (plan.voz[0].entraEn + 3);
+  assert.equal(hueco, PAUSA_MAXIMA);
+});
+
+test("la duración total cuadra: entrada + frases + sus silencios + salida", () => {
   const plan = construirPlan(FRASES, AJUSTES);
-  const suma = 4 + 3 + 2;
-  const pausas = AJUSTES.pausaSeg * (FRASES.length - 1);
-  assert.equal(plan.duracionTotal, ENTRADA_FONDO + suma + pausas + SALIDA_FONDO);
+  const voz = 4 + 3 + 2;
+  const silencios = 1.2 + 0.8;
+  assert.equal(
+    plan.duracionTotal,
+    ENTRADA_FONDO + voz + silencios + SALIDA_FONDO,
+  );
 });
 
 test("cada bloque conserva el tramo exacto de la voz master", () => {
@@ -126,7 +145,7 @@ test("bajar la voz a cero es válido: queda solo el ambiente", () => {
 });
 
 test("rechaza pausas negativas", () => {
-  assert.throws(() => construirPlan(FRASES, { ...AJUSTES, pausaSeg: -1 }));
+  assert.throws(() => construirPlan(FRASES, { ...AJUSTES, gananciaVoz: -1 }));
 });
 
 test("rechaza frases con fin anterior al inicio", () => {
@@ -162,7 +181,8 @@ test("una salida larga alarga la pieza, no corta la última frase", () => {
 test("sin entrada ni salida, la voz arranca de inmediato", () => {
   const plan = construirPlan(FRASES, { ...AJUSTES, entradaSeg: 0, salidaSeg: 0 });
   assert.equal(plan.voz[0].entraEn, 0);
-  assert.equal(plan.duracionTotal, 4 + 3 + 2 + 2 * 2);
+  // Las frases duran 4+3+2 y entre ellas quedan los silencios grabados.
+  assert.equal(plan.duracionTotal, 4 + 3 + 2 + 1.2 + 0.8);
 });
 
 test("rechaza entradas y salidas negativas o absurdas", () => {

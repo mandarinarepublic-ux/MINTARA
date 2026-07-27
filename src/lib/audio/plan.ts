@@ -21,7 +21,6 @@ export type AjustesAudio = {
    */
   gananciaVoz: number;
   gananciaFondo: number;
-  pausaSeg: number;
   /** Segundos que tarda el ambiente en aparecer, antes de la primera palabra. */
   entradaSeg: number;
   /** Segundos que tarda en apagarse al final, ya sin voz. Es lo que deja dormir. */
@@ -52,6 +51,19 @@ export const SALIDA_FONDO = 3;
 const ENTRADA_MAXIMA = 60;
 const SALIDA_MAXIMA = 120;
 
+/**
+ * Tope del silencio entre frases.
+ *
+ * Las pausas de la grabación se respetan porque son la interpretación de la
+ * persona — el karaoke le marcó el ritmo mientras leía. Pero un hueco muy
+ * largo no es interpretación: es que se distrajo, tosió o fue por agua. A
+ * partir de aquí se recorta.
+ */
+export const PAUSA_MAXIMA = 6;
+
+/** Respiro que se usa cuando no hay un silencio original que respetar. */
+const RESPIRO_ESTANDAR = 2;
+
 export function construirPlan(
   frases: Frase[],
   ajustes: AjustesAudio,
@@ -64,9 +76,6 @@ export function construirPlan(
   // ambiente denso; más que eso ya sería distorsión, no volumen.
   if (ajustes.gananciaVoz < 0 || ajustes.gananciaVoz > 2) {
     throw new Error("La ganancia de la voz debe estar entre 0 y 2");
-  }
-  if (ajustes.pausaSeg < 0) {
-    throw new Error("La pausa no puede ser negativa");
   }
   if (ajustes.entradaSeg < 0 || ajustes.entradaSeg > ENTRADA_MAXIMA) {
     throw new Error(`La entrada debe estar entre 0 y ${ENTRADA_MAXIMA} segundos`);
@@ -92,7 +101,20 @@ export function construirPlan(
 
   indices.forEach((indice, posicion) => {
     const f = frases[indice];
-    if (posicion > 0) reloj += ajustes.pausaSeg;
+
+    if (posicion > 0) {
+      // El silencio que dejó la persona entre esta frase y la anterior, tal
+      // como lo grabó. Con el orden barajado no hay "anterior" original que
+      // valga, así que se usa un respiro estándar.
+      const anterior = frases[indices[posicion - 1]];
+      const huecoReal = f.inicio - anterior.fin;
+      const hueco =
+        ajustes.orden === "barajado" || huecoReal < 0
+          ? RESPIRO_ESTANDAR
+          : Math.min(huecoReal, PAUSA_MAXIMA);
+      reloj += hueco;
+    }
+
     voz.push({
       frase: indice,
       entraEn: redondear(reloj),
