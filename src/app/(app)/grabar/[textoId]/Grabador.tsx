@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation";
 import { supabaseNavegador } from "@/lib/supabase/cliente";
 import { formatoSoportado, extensionDe } from "@/lib/audio/grabacion";
 import { Karaoke, ComoLeerlo } from "./Karaoke";
-import { construirGuion, duracionDelGuion } from "@/lib/audio/interpretacion";
+import {
+  construirGuion,
+  duracionDelGuion,
+  avanceDelGuion,
+} from "@/lib/audio/interpretacion";
 
 /**
  * Cuánto silencio hay que dejar para que la grabación se corte sola.
@@ -234,7 +238,11 @@ export function Grabador({
           transcurridoMs={transcurrido}
         />
         {estado === "grabando" && (
-          <BarraDeTiempo restante={1 - transcurrido / duracionGuionMs} />
+          // Se agota al paso de las palabras que ya se dijeron, no del reloj:
+          // así va exactamente igual que el texto que se está pintando.
+          <BarraDeTiempo
+            restante={1 - avanceDelGuion(guion, transcurrido / 1000)}
+          />
         )}
       </div>
 

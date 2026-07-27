@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   marcarFrase,
   construirGuion,
+  avanceDelGuion,
   RESPIRACION_SEG,
   type Intencion,
 } from "./interpretacion.ts";
@@ -112,4 +113,50 @@ test("el ritmo sugerido es más lento que hablar normal", () => {
 test("sin frases devuelve un guion vacío", () => {
   assert.deepEqual(construirGuion([]), []);
   assert.deepEqual(construirGuion(["   "]), []);
+});
+
+// ---------------------------------------------------------------------
+// El avance, contado en palabras
+// ---------------------------------------------------------------------
+
+test("el avance cuenta palabras dichas, no tiempo", () => {
+  const guion = construirGuion(["Merezco el mismo cariño que doy"]);
+  const total = guion[0].palabras.length;
+
+  // Cuando se enciende la tercera, ya se dijeron dos.
+  const tercera = guion[0].palabras[2];
+  assert.equal(avanceDelGuion(guion, tercera.desdeSeg), 2 / total);
+});
+
+test("el avance no se mueve durante la respiración entre frases", () => {
+  const guion = construirGuion(["Respiro y suelto", "Estoy a salvo"]);
+  const finPrimera = guion[0].hastaSeg;
+  const antesDeLaSegunda = guion[1].desdeSeg - 0.01;
+
+  // En ese hueco no se enciende ninguna palabra nueva: la barra se queda
+  // quieta, igual que el texto.
+  assert.equal(
+    avanceDelGuion(guion, finPrimera),
+    avanceDelGuion(guion, antesDeLaSegunda),
+  );
+});
+
+test("empieza en cero y termina en uno", () => {
+  const guion = construirGuion(["Merezco el mismo cariño que doy", "Respira"]);
+  assert.equal(avanceDelGuion(guion, 0), 0);
+  assert.equal(avanceDelGuion(guion, 9999), 1);
+});
+
+test("nunca retrocede", () => {
+  const guion = construirGuion(["Hoy empiezo de nuevo", "Voy a mi ritmo y llego"]);
+  let anterior = 0;
+  for (let t = 0; t < 15; t += 0.1) {
+    const ahora = avanceDelGuion(guion, t);
+    assert.ok(ahora >= anterior, `retrocedió en el segundo ${t.toFixed(1)}`);
+    anterior = ahora;
+  }
+});
+
+test("un guion vacío no divide por cero", () => {
+  assert.equal(avanceDelGuion([], 5), 1);
 });

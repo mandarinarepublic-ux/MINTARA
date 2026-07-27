@@ -123,3 +123,23 @@ export function construirGuion(frases: string[]): FraseGuiada[] {
 export function duracionDelGuion(guion: FraseGuiada[]): number {
   return guion.length === 0 ? 0 : guion[guion.length - 1].hastaSeg;
 }
+
+/**
+ * Cuánto se lleva dicho, contado en PALABRAS encendidas (de 0 a 1).
+ *
+ * No se mide por reloj a propósito: el tiempo incluye las respiraciones y
+ * cada palabra dura distinto según su intención, así que una barra por reloj
+ * avanzaría a un paso y el texto se pintaría a otro. Contando palabras, lo
+ * que ves y lo que marca la barra van exactamente igual — y el ritmo es
+ * justamente lo que la guía intenta enseñar.
+ */
+export function avanceDelGuion(guion: FraseGuiada[], segundos: number): number {
+  const todas = guion.flatMap((f) => f.palabras);
+  if (todas.length === 0) return 1;
+
+  // Se cuentan las TERMINADAS, no las encendidas: la primera se enciende en
+  // el segundo cero, así que contar encendidas haría que la barra arrancara
+  // ya mordida.
+  const dichas = todas.filter((p) => segundos >= p.hastaSeg).length;
+  return dichas / todas.length;
+}
