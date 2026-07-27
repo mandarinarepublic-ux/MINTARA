@@ -12,11 +12,12 @@ import {
 } from "./armonia";
 
 /**
- * El desvanecido de entrada y salida, aplicado a TODA la pieza.
+ * El desvanecido de entrada y salida. **Solo para el ambiente.**
  *
- * Va en las dos pistas —voz y ambiente— porque lo que aparece y desaparece
- * es la grabación entera, no una capa. Si solo lo llevara el ambiente, una
- * salida larga dejaría la voz cortada en seco por debajo.
+ * Se probó aplicarlo también a la voz —la pieza entera apareciendo y
+ * desapareciendo— y sonaba mal: la voz se percibía como si se perdiera o se
+ * cortara. La voz entra y sale a su nivel; lo que aparece y se apaga es el
+ * paisaje que la rodea.
  */
 function aplicarDesvanecido(
   nodo: GainNode,
@@ -127,10 +128,10 @@ export class Reproductor {
       hz,
     );
 
-    // El desvanecido de la pieza entera vive al final de la cadena.
+    // La voz NO se desvanece: entra y sale a su nivel. Este nodo solo junta
+    // la voz seca con su reflejo antes de salir.
     const maestro = offline.createGain();
     maestro.connect(offline.destination);
-    aplicarDesvanecido(maestro, plan, 1);
 
     // El espacio: una copia de la voz pasada por una habitación corta, mezclada
     // por debajo. La voz seca sigue mandando.
