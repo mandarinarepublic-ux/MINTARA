@@ -20,12 +20,45 @@ const UMBRAL_DE_SILENCIO = 0.06;
 
 type Estado = "listo" | "grabando" | "revisando" | "subiendo";
 
-/** mm:ss a partir de milisegundos. */
-function reloj(ms: number): string {
-  const total = Math.floor(ms / 1000);
-  const m = String(Math.floor(total / 60)).padStart(2, "0");
-  const s = String(total % 60).padStart(2, "0");
-  return `${m}:${s}`;
+/**
+ * Lo que queda de texto, como una barra que se agota.
+ *
+ * Un reloj obliga a leer un número y hacer una cuenta mientras hablas; una
+ * barra se entiende de reojo, que es todo el tiempo de atención que le sobra
+ * a alguien leyendo en voz alta. Se vacía por la izquierda: lo que queda se
+ * va apretando contra el final.
+ */
+function BarraDeTiempo({ restante }: { restante: number }) {
+  const terminado = restante <= 0;
+  const acabando = restante < 0.15;
+
+  return (
+    <div className="flex w-full flex-col items-center gap-2">
+      <div className="flex h-[5px] w-full justify-end overflow-hidden rounded-full bg-lavanda-100/12">
+        <span
+          className="h-full rounded-full transition-[width] duration-200 ease-linear"
+          style={{
+            width: `${restante * 100}%`,
+            background: acabando
+              ? "var(--color-rosa-400)"
+              : "linear-gradient(90deg,#7ED1C1,#A26DBE)",
+          }}
+        />
+      </div>
+
+      <p
+        className={`text-[13px] ${
+          terminado ? "text-rosa-400" : "text-lavanda-100/55"
+        }`}
+      >
+        {terminado
+          ? "Cuando termines, se detiene sola"
+          : acabando
+            ? "Última frase"
+            : "Tómate tu tiempo"}
+      </p>
+    </div>
+  );
 }
 
 export function Grabador({
@@ -239,18 +272,9 @@ export function Grabador({
                 />
               ))}
             </div>
-            {transcurrido < duracionGuionMs ? (
-              <p className="mono text-[15px] tracking-[0.1em] text-menta-400">
-                {reloj(duracionGuionMs - transcurrido)}
-                <span className="ml-2 text-lavanda-100/45">
-                  para terminar el texto
-                </span>
-              </p>
-            ) : (
-              <p className="text-[14px] text-rosa-400">
-                Cuando termines, se detiene sola
-              </p>
-            )}
+            <BarraDeTiempo
+              restante={Math.max(0, 1 - transcurrido / duracionGuionMs)}
+            />
           </>
         )}
 

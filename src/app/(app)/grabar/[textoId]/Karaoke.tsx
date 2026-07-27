@@ -63,7 +63,7 @@ export function Karaoke({
       ref={contenedor}
       // Ocupa el alto que le deje el resto y se desplaza por dentro: así el
       // botón de grabar nunca queda empujado fuera de la pantalla.
-      className="flex h-full flex-col gap-6 overflow-y-auto pr-1"
+      className="barra-fina flex h-full flex-col gap-6 overflow-y-auto pr-2"
     >
       {guion.map((frase, i) => (
         <Frase
