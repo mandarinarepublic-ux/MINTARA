@@ -3,7 +3,7 @@ import Link from "next/link";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import { ocultarCelular } from "@/lib/telefono";
 import { LIMITES, PRECIOS, type Plan } from "@/lib/planes";
-import { pedirDesbloqueo, borrarTodo } from "./acciones";
+import { borrarTodo } from "./acciones";
 
 export default async function Cuenta() {
   const supabase = await supabaseServidor();
@@ -46,14 +46,17 @@ export default async function Cuenta() {
         </p>
 
         {plan === "gratis" && (
-          <form action={pedirDesbloqueo} className="mt-5 flex flex-col gap-2">
-            <button className="rounded-full bg-oro-500 px-6 py-3.5 font-semibold text-violeta-600 transition hover:bg-oro-400 active:scale-[0.97]">
+          <div className="mt-5 flex flex-col gap-2">
+            <Link
+              href="/premium"
+              className="rounded-full bg-oro-500 px-6 py-3.5 text-center font-semibold text-violeta-600 transition hover:bg-oro-400 active:scale-[0.97]"
+            >
               Pasar a Premium
-            </button>
+            </Link>
             <p className="text-center text-xs text-lavanda-100/55">
               {PRECIOS.mensual.etiqueta} · {PRECIOS.anual.etiqueta}
             </p>
-          </form>
+          </div>
         )}
       </div>
 

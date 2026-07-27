@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      // Los audios de ambiente pesan un par de megas y viajan al servidor
+      // dentro del formulario del panel. El tope normal (1 MB) los rechaza.
+      bodySizeLimit: "12mb",
+    },
+  },
   env: {
     /**
      * Versión visible en la app.

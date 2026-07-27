@@ -43,6 +43,14 @@ export function NuevoAmbiente({ familias }: { familias: Familia[] }) {
         </select>
       </label>
 
+      <input
+        type="file"
+        name="audio"
+        accept="audio/*"
+        required
+        className="text-[13px] text-lavanda-100/70 file:mr-3 file:rounded-full file:border file:border-lavanda-100/25 file:bg-transparent file:px-4 file:py-2 file:text-[13px] file:text-crema-50"
+      />
+
       <label className="flex flex-col gap-1.5">
         <span className="etiqueta text-lavanda-100/60">Nombre de la variante</span>
         <input
@@ -64,8 +72,6 @@ export function NuevoAmbiente({ familias }: { familias: Familia[] }) {
           <span className="text-[13px] text-lavanda-100/80">Gratis</span>
         </label>
       </div>
-
-      <SubidorDeAudio familia="nuevos" />
 
       <Aviso estado={estado} />
 

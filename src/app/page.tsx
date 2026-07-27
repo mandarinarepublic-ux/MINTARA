@@ -1,5 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
+import {
+  ComoFunciona,
+  Ambientes,
+  Privacidad,
+  Precios,
+  Cierre,
+  Pie,
+} from "./(publico)/Secciones";
 
 /**
  * Landing — Hero A (cielo nocturno a sangre completa).
@@ -59,6 +67,20 @@ function Emblema({ tam = 34 }: { tam?: number }) {
 }
 
 export default function Portada() {
+  return (
+    <>
+      <Hero />
+      <ComoFunciona />
+      <Ambientes />
+      <Privacidad />
+      <Precios />
+      <Cierre />
+      <Pie />
+    </>
+  );
+}
+
+function Hero() {
   return (
     <div className="relative flex min-h-dvh flex-col">
       <CieloNocturno />

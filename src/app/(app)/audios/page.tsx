@@ -100,7 +100,7 @@ export default async function MisAudios() {
             {LIMITES.premium.segundos / 60} minutos y usas río y mar.
           </p>
           <Link
-            href="/cuenta"
+            href="/premium"
             className="mt-4 inline-block rounded-full bg-oro-500 px-6 py-3 font-semibold text-violeta-600 transition hover:bg-oro-400"
           >
             Ver Premium

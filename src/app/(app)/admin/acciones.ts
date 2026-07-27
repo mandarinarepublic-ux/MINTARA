@@ -3,6 +3,41 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { supabaseServidor } from "@/lib/supabase/servidor";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+
+/**
+ * Sube el audio al almacén y devuelve su ruta.
+ *
+ * Lo sube el SERVIDOR con permisos de servicio, no el navegador. El intento
+ * anterior dejaba que el navegador subiera directo, apoyándose en una regla
+ * de la base que comprobaba el rol consultando otra tabla protegida; esa
+ * comprobación no se resuelve dentro del almacén y rechazaba todas las
+ * subidas. Con este camino la única comprobación de permisos es
+ * `exigirAdmin`, que ya está aquí arriba y es fácil de auditar.
+ */
+async function subirAudio(archivo: File, familia: string): Promise<string> {
+  if (!archivo.type.startsWith("audio/")) {
+    throw new Error("Ese archivo no es un audio.");
+  }
+  if (archivo.size > 12 * 1024 * 1024) {
+    throw new Error("Pesa más de 12 MB. Recórtalo a 60-90 segundos.");
+  }
+
+  // Nombre estable y sin sorpresas: sin tildes, espacios ni mayúsculas.
+  const limpio = archivo.name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9.]+/g, "-");
+  const ruta = `${familia}/${Date.now()}-${limpio}`;
+
+  const { error } = await supabaseAdmin()
+    .storage.from("fondos")
+    .upload(ruta, archivo, { contentType: archivo.type, upsert: true });
+
+  if (error) throw new Error(`No se pudo subir el audio: ${error.message}`);
+  return ruta;
+}
 
 /**
  * Todas las acciones comprueban el rol contra la base, no contra lo que diga
@@ -43,17 +78,31 @@ export async function crearAmbiente(
 ): Promise<EstadoAdmin> {
   const supabase = await exigirAdmin();
 
+  const familia = String(datos.get("familia") ?? "");
+  const archivo = datos.get("audio");
+
+  if (!(archivo instanceof File) || archivo.size === 0) {
+    return { error: "Elige el archivo de audio antes de guardar." };
+  }
+
+  let ruta: string;
+  try {
+    ruta = await subirAudio(archivo, familia);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "No se pudo subir el audio." };
+  }
+
   const revisado = Ambiente.safeParse({
-    familia: String(datos.get("familia") ?? ""),
+    familia,
     nombre: String(datos.get("nombre") ?? ""),
-    ruta: String(datos.get("ruta") ?? ""),
+    ruta,
     gratis: datos.get("gratis") === "on",
     activo: true,
     orden: Number(datos.get("orden") ?? 0),
   });
 
   if (!revisado.success) {
-    return { error: "Faltan datos: revisa el nombre y que el audio se haya subido." };
+    return { error: "Revisa el nombre: hace falta y no puede pasar de 60 letras." };
   }
 
   const { error } = await supabase.from("ambientes").insert(revisado.data);
@@ -78,9 +127,16 @@ export async function editarAmbiente(
     orden: Number(datos.get("orden") ?? 0),
   };
 
-  // La ruta solo cambia si se subió un audio nuevo; si no, se conserva.
-  const rutaNueva = String(datos.get("ruta") ?? "").trim();
-  if (rutaNueva) cambios.ruta = rutaNueva;
+  // El audio solo cambia si se eligió uno nuevo; si no, se conserva el que ya
+  // tenía. Así "guardar" tras cambiar solo el nombre no deja el ambiente mudo.
+  const archivo = datos.get("audio");
+  if (archivo instanceof File && archivo.size > 0) {
+    try {
+      cambios.ruta = await subirAudio(archivo, String(datos.get("familia") ?? "otros"));
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : "No se pudo subir el audio." };
+    }
+  }
 
   if (!cambios.nombre) return { error: "El nombre no puede quedar vacío." };
 

@@ -37,7 +37,7 @@ export async function proxy(peticion: NextRequest) {
   } = await supabase.auth.getUser();
 
   const privada =
-    /^\/(audios|estudio|grabar|mezclar|cuenta|consentimiento|admin)/.test(
+    /^\/(audios|estudio|grabar|mezclar|cuenta|consentimiento|admin|premium)/.test(
       peticion.nextUrl.pathname,
     );
 
