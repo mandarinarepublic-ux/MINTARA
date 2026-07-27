@@ -203,12 +203,18 @@ export function Grabador({
 
 
   return (
-    <div className="flex min-h-[70dvh] flex-col gap-6">
+    /*
+     * Tres zonas: instrucciones arriba, texto en medio con su propio
+     * desplazamiento, y los controles anclados abajo. Antes el texto empujaba
+     * el botón de grabar fuera de la pantalla y no se veía ni el principio
+     * del texto ni el botón.
+     */
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       {/* Las instrucciones van ANTES del texto: se leen para prepararse, y
           después de leer el texto ya no sirven de nada. */}
       {estado === "listo" && <ComoLeerlo />}
 
-      <div className="rounded-[22px] border border-lavanda-100/15 bg-white/5 px-[22px] py-[26px]">
+      <div className="min-h-0 flex-1 rounded-[22px] border border-lavanda-100/15 bg-white/5 px-[22px] py-5">
         <Karaoke
           frases={frases}
           grabando={estado === "grabando"}
@@ -218,7 +224,7 @@ export function Grabador({
 
       {error && <p className="text-sm text-rosa-400">{error}</p>}
 
-      <div className="mt-auto flex flex-col items-center gap-5">
+      <div className="sticky bottom-0 -mx-[22px] flex flex-col items-center gap-4 bg-violeta-700/95 px-[22px] pb-6 pt-3 backdrop-blur">
         {estado === "grabando" && (
           <>
             <div className="flex h-[70px] w-full items-center gap-[3px]">

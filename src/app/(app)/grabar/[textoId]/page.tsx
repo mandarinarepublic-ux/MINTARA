@@ -37,7 +37,7 @@ export default async function Grabar({
   const plan = planEfectivo((perfil?.plan ?? "gratis") as Plan, perfil?.rol);
 
   return (
-    <main className="mx-auto flex w-full max-w-[402px] flex-col px-[22px] py-8 md:max-w-[520px]">
+    <main className="mx-auto flex h-dvh w-full max-w-[402px] flex-col px-[22px] pt-6 md:max-w-[520px]">
       <div className="flex items-center justify-between">
         <Link href="/estudio" className="text-[15px] text-lavanda-100/70">
           ← Volver
@@ -45,14 +45,14 @@ export default async function Grabar({
         <span className="text-xs text-lavanda-100/50">Paso 2 de 2</span>
       </div>
 
-      <h1 className="display mt-5 text-[28px] leading-tight text-crema-50">
+      <h1 className="display mt-3 text-[24px] leading-tight text-crema-50">
         Lee esto en voz alta
       </h1>
-      <p className="mt-2 text-sm text-lavanda-100/70">
+      <p className="mt-1 text-[13px] text-lavanda-100/70">
         Tranquila, puedes repetirlo cuantas veces quieras.
       </p>
 
-      <div className="mt-6 flex-1">
+      <div className="mt-4 flex min-h-0 flex-1 flex-col">
         <Grabador
           textoId={texto.id}
           perfilId={user.id}

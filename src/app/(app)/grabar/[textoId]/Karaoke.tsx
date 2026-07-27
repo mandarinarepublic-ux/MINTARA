@@ -61,7 +61,9 @@ export function Karaoke({
   return (
     <div
       ref={contenedor}
-      className="flex max-h-[46dvh] flex-col gap-6 overflow-y-auto pr-1"
+      // Ocupa el alto que le deje el resto y se desplaza por dentro: así el
+      // botón de grabar nunca queda empujado fuera de la pantalla.
+      className="flex h-full flex-col gap-6 overflow-y-auto pr-1"
     >
       {guion.map((frase, i) => (
         <Frase
@@ -122,15 +124,19 @@ function Frase({
 }
 
 /** La leyenda de colores. Se muestra antes de grabar, no durante. */
+/**
+ * La leyenda de colores, antes del texto.
+ *
+ * Compacta a propósito: va arriba, y cada línea que ocupa aquí es una línea
+ * menos de texto visible en un teléfono.
+ */
 export function ComoLeerlo() {
   return (
-    <div className="flex flex-col gap-2 rounded-[18px] border border-lavanda-100/15 bg-white/5 px-5 py-4">
-      <p className="etiqueta text-lavanda-100/60">Cómo decirlo</p>
-      <p className="text-[13px] leading-relaxed text-lavanda-100/75">
-        Las palabras se van encendiendo al ritmo sugerido. Si vas más lento, no
-        pasa nada: te espera.
+    <div className="flex flex-col gap-1.5 rounded-[14px] border border-lavanda-100/15 bg-white/5 px-4 py-3">
+      <p className="text-[12px] leading-snug text-lavanda-100/70">
+        Las palabras se encienden al ritmo sugerido. Si vas más lento, te espera.
       </p>
-      <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
+      <div className="flex flex-wrap gap-x-4 text-[12px]">
         <span className="text-menta-400">suave</span>
         <span className="text-crema-50">normal</span>
         <span className="text-oro-500">con fuerza</span>
