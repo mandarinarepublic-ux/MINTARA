@@ -2,13 +2,18 @@
 #
 # Despliegue de Míntara.
 #
-# POR QUÉ EXISTE ESTE SCRIPT: `vercel --prod` crea un despliegue nuevo, pero
-# los dominios de este proyecto NO lo siguen solos — se quedaron apuntando a
-# despliegues viejos. El 26-jul eso hizo que seis correcciones seguidas nunca
-# llegaran al teléfono de Rodrigo, y se perdió una tarde arreglando cosas que
-# ya estaban arregladas.
+# ESTE YA NO ES EL CAMINO NORMAL. Desde el 30-jul Vercel está conectado a
+# GitHub: lo que entra a `main` se publica solo, y `mintara-app.vercel.app`
+# quedó registrado como dominio DEL PROYECTO, así que se mueve solo al último
+# despliegue de producción. Eso es lo que permite ajustar desde el celular.
 #
-# Aquí se despliega Y se reapuntan los dominios, siempre, en el mismo paso.
+# El script queda como respaldo para cuando GitHub o la integración fallen, y
+# porque reapuntar el dominio de más nunca hace daño.
+#
+# POR QUÉ NACIÓ: `vercel --prod` creaba un despliegue nuevo y el dominio no lo
+# seguía, porque era un alias suelto y no un dominio del proyecto. El 26-jul
+# eso hizo que seis correcciones seguidas nunca llegaran al teléfono de
+# Rodrigo, y se perdió una tarde arreglando cosas que ya estaban arregladas.
 set -euo pipefail
 
 ALCANCE="mandarinarepublic-6819s-projects"
