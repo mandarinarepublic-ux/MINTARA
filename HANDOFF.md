@@ -24,14 +24,17 @@ viaja, y hay que pedir otro código por WhatsApp, que **cuesta dinero**. El 26-j
 media tarde por esto: seis correcciones seguidas no llegaron al teléfono porque los dominios
 apuntaban a un despliegue viejo.
 
-**Desplegar SOLO con:**
+**Desplegar.** Desde el 30-jul el proyecto de Vercel está conectado a GitHub, así que hay dos
+caminos y el normal es el primero:
 
-```bash
-npm run desplegar
-```
+1. **Lo que entra a `main` sale a la app solo.** Vercel construye y publica sin que nadie corra
+   nada. Es lo que permite trabajar desde el celular.
+2. **A mano, desde esta computadora:** `npm run desplegar`. Corre las pruebas, despliega,
+   reapunta el dominio y comprueba. Queda como respaldo para cuando GitHub o la integración
+   fallen.
 
-Nunca `vercel --prod` a secas: los dominios de este proyecto no siguen solos al último
-despliegue. El script corre las pruebas, despliega, reapunta los dominios y comprueba.
+Nunca `vercel --prod` a secas: `mintara-app.vercel.app` es un **alias**, no un dominio del
+proyecto, y no sigue solo al último despliegue. Por eso existe el script.
 
 **Cómo saber qué versión corre un teléfono:** abajo del todo en la pantalla del audio hay una
 línea gris con el commit. Ante cualquier "no me funciona", **eso es lo primero que hay que
@@ -131,13 +134,41 @@ familia, ordenarlos, marcarlos visibles o gratis, y editar las familias.
   invisible). Hay un helper `leerEntorno` que lo limpia igual.
 - **Rol admin = Premium** en toda la app, para no toparse con límites al probar.
 
+## Ajustar desde el celular
+
+Montado el 30-jul. La idea: pedir un ajuste desde el teléfono, oírlo, y aprobarlo — sin
+prender la computadora.
+
+**El circuito:**
+
+1. Abres Claude Code en el celular (app de Claude → Code, o `claude.ai/code`) y pides el ajuste
+2. Claude trabaja en una **rama** y abre un **PR**. No commitea a `main`
+3. Vercel construye un **Preview** de ese PR y deja la URL en el propio PR
+4. Abres esa URL en el teléfono y **oyes** el cambio
+5. Si te gusta, apruebas el merge desde el celular. Al entrar a `main`, Vercel publica en
+   `mintara-app.vercel.app`
+
+**Por qué PR y no directo a `main`:** los cambios de esta app se juzgan oyéndolos, no leyendo
+el diff. Un cambio de mezcla o de tiempos puede estar correcto en el código y sonar mal.
+
+**Lo que la sesión en la nube NO puede hacer:**
+
+- **Desplegar.** Su red solo alcanza una lista blanca (npm, GitHub…) y Vercel no está ahí. No
+  hace falta: publica Vercel al entrar a `main`.
+- **Leer `.env.local`.** No está versionado. Las claves las pone Vercel en el despliegue.
+- **Oír el audio.** Eso lo haces tú en el Preview. Nadie puede juzgar la mezcla por el código.
+
+⚠️ **El Preview escribe en la MISMA base de producción.** No hay base de pruebas aparte, así
+que grabar en un Preview crea audios de verdad en tu cuenta. Bórralos desde *Mis audios* si no
+los quieres.
+
 ## Cómo seguir
 
 ```bash
 cd C:\Users\RodrigoWork\Desktop\MINTARA
 npm test          # 110 pruebas, sin librerías
 npm run dev
-npm run desplegar # pruebas + deploy + dominios
+npm run desplegar # respaldo: pruebas + deploy + dominio (lo normal es que publique Vercel solo)
 ```
 
 Todo está commiteado y subido a GitHub. La rama es `main`.
