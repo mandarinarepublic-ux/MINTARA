@@ -7,7 +7,16 @@
 
 ## Lo primero que hay que saber
 
-**URL estable:** https://mintara-app.vercel.app
+**URL estable:** https://mintara-app.vercel.app — y es la **única**.
+
+El 30-jul se borraron los alias `mi-voz.vercel.app`,
+`mi-voz-mandarinarepublic-6819s-projects.vercel.app` y
+`mi-voz-mandarinarepublic-6819-mandarinarepublic-6819s-projects.vercel.app`. Venían de cuando
+el proyecto se llamaba `mi-voz` (es el mismo proyecto, solo renombrado: el id
+`prj_j0RCy4HU6GN5pePYO0yRbfHqe0j0` nunca cambió). **Los dos últimos seguían vivos y
+respondían 200 sirviendo el despliegue del 26-jul.** Si alguien los abría, veía errores ya
+corregidos. No volver a dejar URLs de más: una URL de más es una versión vieja esperando
+confundir a alguien.
 
 ⚠️ **Usar SIEMPRE esa.** Cada despliegue genera una URL propia
 (`mintara-XXXX.vercel.app`) y para el navegador cada una es un sitio distinto: la sesión no

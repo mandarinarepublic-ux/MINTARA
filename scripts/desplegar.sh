@@ -12,7 +12,11 @@
 set -euo pipefail
 
 ALCANCE="mandarinarepublic-6819s-projects"
-DOMINIOS=("mintara-app.vercel.app" "mi-voz.vercel.app")
+# Una sola URL, a propósito. El 30-jul se borraron los alias `mi-voz*` que
+# habían quedado del nombre viejo del proyecto: dos de ellos seguían vivos
+# sirviendo el despliegue del 26-jul. Una URL de más es una versión vieja
+# esperando confundir a alguien. Si algún día hay dominio propio, va aquí.
+DOMINIOS=("mintara-app.vercel.app")
 
 echo "→ Pruebas"
 npm test >/dev/null
