@@ -125,6 +125,36 @@ otra cosa: ahí se guardan las afirmaciones que cada persona escribe para grabar
 
 ---
 
+## Entrar con correo — construido y APAGADO
+
+Está todo hecho, pero **no se ve para nadie**. La pestaña de Correo en `/ingresar` aparece solo
+si existe la variable `INGRESO_POR_CORREO` en Vercel. Sin ella, la pantalla es idéntica a la de
+siempre — verificado.
+
+**Para encenderlo hacen falta tres cosas, ninguna es código:**
+
+1. **Un dominio con correo verificado.** Falta decidir entre `mintara.app` (aún sin comprar) y
+   `mandarinaec.com` (ya lo tienes).
+2. **SMTP propio en Supabase.** El correo que trae por defecto solo escribe **a miembros del
+   equipo del proyecto** y manda **2 por hora**. Sin esto, cualquier cliente recibe *Email
+   address not authorized*. Resend es gratis hasta 3.000/mes.
+3. ⚠️ **Editar la plantilla del correo en Supabase para que incluya `{{ .Token }}`.** Con la
+   plantilla que viene de fábrica se envía un ENLACE en vez del código de 6 dígitos, y la
+   pantalla de verificar no sirve de nada. Es el paso que más fácil se olvida.
+
+Recién entonces: `INGRESO_POR_CORREO=1` en Vercel y aparece.
+
+**Por qué vale la pena:** Meta cobra por cada código entregado, y aplica una tarifa
+**internacional** bastante más alta cuando el número es de otro país. La gente de afuera es
+justo la que no usa WhatsApp, así que ahí el correo no ahorra un poco: ahorra casi todo.
+
+**Juntar las dos formas de entrar** está en *Mi perfil* → «Cómo entras». Funciona porque las dos
+identidades cuelgan del mismo usuario de Supabase; comprobado en esta base, donde el usuario
+`eaacdd90` tiene una identidad `phone` y una `email` creada 21 minutos después.
+
+Falta lo simétrico: **agregar un celular a una cuenta que nació por correo**. Pide mandar un
+código por WhatsApp y verificarlo, que es otra pantalla.
+
 ## Pendientes
 
 0. **Traer las listas de afirmaciones a la base.** En `/admin/afirmaciones` hay un botón que lo

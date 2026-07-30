@@ -218,10 +218,31 @@ const ENTRADAS = {
     donde: "Bajo el título, antes del campo del número",
     largo: "parrafo",
   },
+  "ingresar.cuerpo_correo": {
+    porDefecto: "Te mandamos un código a tu correo para entrar. Sin contraseñas.",
+    etiqueta: "Explicación al elegir correo",
+    donde: "Reemplaza a la anterior cuando se toca la pestaña Correo",
+    largo: "parrafo",
+  },
+  "ingresar.pestana_celular": {
+    porDefecto: "Celular",
+    etiqueta: "Pestaña de celular",
+    donde: "Solo se ve cuando el ingreso por correo está encendido",
+  },
+  "ingresar.pestana_correo": {
+    porDefecto: "Correo",
+    etiqueta: "Pestaña de correo",
+    donde: "Solo se ve cuando el ingreso por correo está encendido",
+  },
   "ingresar.etiqueta_numero": {
     porDefecto: "Tu número",
     etiqueta: "Nombre del campo",
     donde: "Encima de la casilla del celular",
+  },
+  "ingresar.etiqueta_correo": {
+    porDefecto: "Tu correo",
+    etiqueta: "Nombre del campo de correo",
+    donde: "Encima de la casilla del correo",
   },
   "ingresar.boton": {
     porDefecto: "Enviarme el código",
@@ -238,6 +259,30 @@ const ENTRADAS = {
     etiqueta: "Nota del pie",
     donde: "Abajo del todo, chiquito",
     largo: "parrafo",
+  },
+
+  // ──────────────────────── Aviso de cuenta recién creada ────────────────────────
+  "cuenta_nueva.titulo": {
+    porDefecto: "¿Ya usabas Míntara?",
+    etiqueta: "Título del aviso",
+    donde: "Solo al entrar por correo y caer en una cuenta sin audios",
+  },
+  "cuenta_nueva.cuerpo": {
+    porDefecto:
+      "Si antes entrabas con tu celular, tus audios están en esa cuenta. Entra con tu número y agrega este correo desde Mi perfil para juntarlas.",
+    etiqueta: "Explicación del aviso",
+    donde: "Bajo el título",
+    largo: "parrafo",
+  },
+  "cuenta_nueva.boton_celular": {
+    porDefecto: "Entrar con mi celular",
+    etiqueta: "Botón de volver al celular",
+    donde: "El botón principal del aviso",
+  },
+  "cuenta_nueva.boton_seguir": {
+    porDefecto: "Seguir, soy nuevo",
+    etiqueta: "Botón de continuar",
+    donde: "Debajo, para quien de verdad es nuevo",
   },
 
   // ─────────────────────────────── Consentimiento ───────────────────────────────
@@ -503,10 +548,26 @@ export const GRUPOS: Grupo[] = [
       "ingresar.eslogan",
       "ingresar.titulo",
       "ingresar.cuerpo",
+      "ingresar.cuerpo_correo",
+      "ingresar.pestana_celular",
+      "ingresar.pestana_correo",
       "ingresar.etiqueta_numero",
+      "ingresar.etiqueta_correo",
       "ingresar.boton",
       "ingresar.boton_enviando",
       "ingresar.pie",
+    ],
+  },
+  {
+    id: "cuenta-nueva",
+    nombre: "Aviso de cuenta nueva",
+    pista: "Lo que ve quien entra por correo y podría tener otra cuenta",
+    ruta: "/ingresar",
+    claves: [
+      "cuenta_nueva.titulo",
+      "cuenta_nueva.cuerpo",
+      "cuenta_nueva.boton_celular",
+      "cuenta_nueva.boton_seguir",
     ],
   },
   {

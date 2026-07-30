@@ -1,6 +1,7 @@
 "use client";
 import type { Textos } from "@/lib/textos/catalogo";
 import type { Paquete } from "@/lib/afirmaciones/paquetes";
+import type { FormaDeEntrar } from "@/lib/ingreso";
 import { PRECIOS } from "@/lib/planes";
 import {
   Hero,
@@ -55,7 +56,20 @@ const PAQUETES_DE_EJEMPLO: Paquete[] = [
   },
 ];
 
-export function VistaPrevia({ grupo, t }: { grupo: string; t: Textos }) {
+export function VistaPrevia({
+  grupo,
+  t,
+  formas,
+}: {
+  grupo: string;
+  t: Textos;
+  /**
+   * Las formas de entrar REALES, no las posibles. Si el ingreso por correo
+   * está apagado, aquí tampoco se ven las pestañas: la ventana tiene que
+   * mostrar lo que ve el cliente, no lo que podría ver algún día.
+   */
+  formas: FormaDeEntrar[];
+}) {
   switch (grupo) {
     case "portada-arriba":
       return <Hero t={t} />;
@@ -71,7 +85,7 @@ export function VistaPrevia({ grupo, t }: { grupo: string; t: Textos }) {
         </>
       );
     case "ingresar":
-      return <Formulario t={t} />;
+      return <Formulario t={t} formas={formas} />;
     case "consentimiento":
       return <Consentimiento t={t} />;
     case "estudio":

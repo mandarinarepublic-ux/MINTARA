@@ -5,10 +5,10 @@ import { Formulario } from "./Formulario";
 export default async function Verificar({
   searchParams,
 }: {
-  searchParams: Promise<{ celular?: string }>;
+  searchParams: Promise<{ celular?: string; correo?: string }>;
 }) {
-  const { celular } = await searchParams;
-  if (!celular) redirect("/ingresar");
+  const { celular, correo } = await searchParams;
+  if (!celular && !correo) redirect("/ingresar");
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-[402px] flex-col justify-center gap-9 px-[22px] py-10">
@@ -24,7 +24,7 @@ export default async function Verificar({
         <h1 className="display text-[32px] leading-none text-crema-50">Míntara</h1>
       </div>
 
-      <Formulario celular={celular} />
+      <Formulario celular={celular} correo={correo} />
     </main>
   );
 }

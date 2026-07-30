@@ -1,6 +1,7 @@
 "use client";
 import { useActionState, useState } from "react";
 import { CATALOGO, type Clave, type Grupo, type Textos } from "@/lib/textos/catalogo";
+import type { FormaDeEntrar } from "@/lib/ingreso";
 import { guardarTextos, deshacerTexto, type EstadoTextos } from "./acciones";
 import { VistaPrevia, anchoDe } from "./VistaPrevia";
 import { Ventana } from "./Ventana";
@@ -16,12 +17,15 @@ export function Editor({
   grupo,
   textos,
   sePuedeDeshacer,
+  formas,
 }: {
   grupo: Grupo;
   /** Lo que la app muestra hoy, ya mezclado. */
   textos: Textos;
   /** Claves que alguna vez se cambiaron y tienen a qué volver. */
   sePuedeDeshacer: string[];
+  /** Las formas de entrar reales, para que la ventana no muestre de más. */
+  formas: FormaDeEntrar[];
 }) {
   const [borrador, setBorrador] = useState<Textos>(textos);
   const [estado, accion, pendiente] = useActionState<EstadoTextos, FormData>(
@@ -41,7 +45,7 @@ export function Editor({
           {cambiado && <span className="text-oro-500">· sin guardar</span>}
         </p>
         <Ventana anchoReal={ancho}>
-          <VistaPrevia grupo={grupo.id} t={borrador} />
+          <VistaPrevia grupo={grupo.id} t={borrador} formas={formas} />
         </Ventana>
         <a
           href={grupo.ruta}

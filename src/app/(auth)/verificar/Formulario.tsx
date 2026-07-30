@@ -2,8 +2,15 @@
 import { useActionState } from "react";
 import { validarCodigo, type EstadoVerificacion } from "./acciones";
 import { ocultarCelular } from "@/lib/telefono";
+import { ocultarCorreo } from "@/lib/correo";
 
-export function Formulario({ celular }: { celular: string }) {
+export function Formulario({
+  celular,
+  correo,
+}: {
+  celular?: string;
+  correo?: string;
+}) {
   const [estado, accion, pendiente] = useActionState<EstadoVerificacion, FormData>(
     validarCodigo,
     {},
@@ -14,12 +21,15 @@ export function Formulario({ celular }: { celular: string }) {
       <div className="flex flex-col gap-2">
         <h2 className="display text-[22px] text-crema-50">Tu código</h2>
         <p className="text-sm leading-relaxed text-lavanda-100/70">
-          Lo mandamos por WhatsApp al {ocultarCelular(celular)}
+          {correo
+            ? `Lo mandamos a ${ocultarCorreo(correo)}`
+            : `Lo mandamos por WhatsApp al ${ocultarCelular(celular ?? "")}`}
         </p>
       </div>
 
       <form action={accion} className="flex flex-col gap-[18px]">
-        <input type="hidden" name="celular" value={celular} />
+        {celular && <input type="hidden" name="celular" value={celular} />}
+        {correo && <input type="hidden" name="correo" value={correo} />}
 
         {/*
           El diseño pide seis casillas. Va un solo campo con las cifras muy

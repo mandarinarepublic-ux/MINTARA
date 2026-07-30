@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { GRUPOS } from "@/lib/textos/catalogo";
 import { obtenerTextos, obtenerTextosParaEditar } from "@/lib/textos/servidor";
+import { formasDeEntrar } from "@/lib/ingreso";
 import { Editor } from "./Editor";
 
 /**
@@ -77,6 +78,7 @@ export default async function Textos({
         grupo={grupo}
         textos={textos}
         sePuedeDeshacer={sePuedeDeshacer}
+        formas={formasDeEntrar()}
       />
     </main>
   );

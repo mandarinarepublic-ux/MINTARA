@@ -3,7 +3,9 @@ import Link from "next/link";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import { ocultarCelular } from "@/lib/telefono";
 import { planEfectivo, LIMITES, PRECIOS, type Plan } from "@/lib/planes";
+import { hayCorreo } from "@/lib/ingreso";
 import { ZonaPeligrosa } from "./ZonaPeligrosa";
+import { ComoEntras } from "./ComoEntras";
 
 export default async function Cuenta() {
   const supabase = await supabaseServidor();
@@ -14,7 +16,7 @@ export default async function Cuenta() {
 
   const { data: perfil } = await supabase
     .from("perfiles")
-    .select("celular, plan, rol")
+    .select("celular, correo, plan, rol")
     .eq("id", user.id)
     .single();
 
@@ -37,9 +39,6 @@ export default async function Cuenta() {
         <p className="text-[17px] font-semibold text-crema-50">
           {plan === "premium" ? "Premium" : "Plan gratis"}
         </p>
-        <p className="mono mt-1 text-xs text-lavanda-100/60">
-          {ocultarCelular(perfil?.celular ?? "")}
-        </p>
         <p className="mt-3 text-[13px] text-lavanda-100/70">
           {count ?? 0} de {LIMITES[plan].audios} audios ·{" "}
           {LIMITES[plan].segundos / 60} min por grabación
@@ -59,6 +58,12 @@ export default async function Cuenta() {
           </div>
         )}
       </div>
+
+      <ComoEntras
+        celular={perfil?.celular ?? null}
+        correo={perfil?.correo ?? null}
+        puedeAgregarCorreo={hayCorreo()}
+      />
 
       <div className="rounded-[18px] border border-menta-400/30 bg-menta-400/10 p-5">
         <p className="etiqueta text-menta-400">Tu voz</p>
