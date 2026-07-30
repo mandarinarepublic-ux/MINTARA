@@ -1,7 +1,21 @@
 # MÍNTARA — handoff
 
-**Última sesión:** 26–27 de julio de 2026
+**Última sesión:** 30 de julio de 2026
 **Estado:** en producción, funcionando, con pendientes claros abajo.
+
+## Lo que pasó el 30-jul
+
+1. **Se puede trabajar desde el celular.** Vercel quedó conectado a GitHub y lo que entra a
+   `main` se publica solo. De paso se destapó la causa real de la tarde perdida del 26-jul:
+   `mintara-app.vercel.app` era un **alias suelto**, que no sigue a los despliegues nuevos.
+   Ahora es dominio del proyecto y se mueve solo. Se borraron los alias `mi-voz*`, dos de los
+   cuales seguían vivos sirviendo la versión del 26-jul.
+2. **Los textos se editan desde `/admin`**, con ventana de previsualización en vivo. Destapó que
+   la portada mentía: prometía «lluvia, río y mar» cuando las familias reales son otras.
+3. **Entrar con correo**, construido y **apagado** — ver su sección más abajo.
+
+**Lo primero que te toca mañana:** decidir el dominio para el correo. Es lo único que separa el
+ingreso por correo de estar en vivo.
 
 ---
 
