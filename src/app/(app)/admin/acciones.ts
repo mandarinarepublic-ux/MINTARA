@@ -1,9 +1,8 @@
 "use server";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { supabaseServidor } from "@/lib/supabase/servidor";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { exigirAdmin } from "./permisos";
 
 /**
  * Sube el audio al almacén y devuelve su ruta.
@@ -37,28 +36,6 @@ async function subirAudio(archivo: File, familia: string): Promise<string> {
 
   if (error) throw new Error(`No se pudo subir el audio: ${error.message}`);
   return ruta;
-}
-
-/**
- * Todas las acciones comprueban el rol contra la base, no contra lo que diga
- * la pantalla. Las políticas de la base ya bloquean a quien no es admin, pero
- * fallar aquí da un mensaje claro en vez de un error críptico de permisos.
- */
-async function exigirAdmin() {
-  const supabase = await supabaseServidor();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/ingresar");
-
-  const { data: perfil } = await supabase
-    .from("perfiles")
-    .select("rol")
-    .eq("id", user.id)
-    .single();
-
-  if (perfil?.rol !== "admin") redirect("/audios");
-  return supabase;
 }
 
 export type EstadoAdmin = { error?: string; ok?: string };

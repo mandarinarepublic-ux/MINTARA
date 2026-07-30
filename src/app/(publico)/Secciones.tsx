@@ -1,5 +1,132 @@
 import Link from "next/link";
+import Image from "next/image";
 import { PRECIOS, LIMITES } from "@/lib/planes";
+import type { Textos } from "@/lib/textos/catalogo";
+import type { FamiliaConAmbientes } from "@/lib/ambientes";
+
+/**
+ * ⚠️ PROVISIONAL: la fotografía de fondo todavía no existe. Mientras llega,
+ * el cielo se dibuja con degradados de la marca. Cuando esté la foto, se
+ * reemplaza este bloque por un <Image fill> con el mismo overlay encima —
+ * el resto de la maqueta no cambia.
+ */
+function CieloNocturno() {
+  return (
+    <div aria-hidden className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 bg-violeta-900" />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(120% 80% at 50% 8%, rgba(107,63,160,0.55) 0%, rgba(26,14,46,0) 60%)",
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(70% 45% at 78% 22%, rgba(216,139,200,0.28) 0%, rgba(26,14,46,0) 70%)",
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(90% 50% at 20% 85%, rgba(126,209,193,0.16) 0%, rgba(26,14,46,0) 65%)",
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(26,14,46,0.82) 0%, rgba(26,14,46,0.45) 42%, rgba(26,14,46,0.92) 100%)",
+        }}
+      />
+    </div>
+  );
+}
+
+function Emblema({ tam = 34 }: { tam?: number }) {
+  return (
+    <Image
+      src="/marca/mintara-badge.png"
+      alt=""
+      width={tam}
+      height={tam}
+      priority
+      className="shrink-0"
+    />
+  );
+}
+
+/**
+ * Vive aquí y no en `page.tsx` para que el panel pueda pintarlo tal cual en
+ * la ventana de previsualización. Si el panel dibujara su propia versión del
+ * hero, las dos se separarían con el primer cambio de diseño y la
+ * previsualización empezaría a mentir.
+ */
+export function Hero({ t }: { t: Textos }) {
+  return (
+    <div className="relative flex min-h-dvh flex-col">
+      <CieloNocturno />
+
+      <header className="relative z-10 mx-auto flex w-full max-w-[1180px] items-center justify-between px-6 py-6 md:px-20">
+        <Link href="/" className="flex items-center gap-3">
+          <Emblema />
+          <span className="display text-2xl text-crema-50">Míntara</span>
+        </Link>
+        <nav className="flex items-center gap-6 text-[13px] tracking-[0.06em]">
+          <Link
+            href="/privacidad"
+            className="hidden text-lavanda-100/75 transition hover:text-crema-50 sm:block"
+          >
+            {t["portada.menu.privacidad"]}
+          </Link>
+          <Link
+            href="/ingresar"
+            className="rounded-full border border-lavanda-100/25 px-5 py-2 text-crema-50 transition hover:border-crema-50 hover:bg-crema-50/10"
+          >
+            {t["portada.menu.ingresar"]}
+          </Link>
+        </nav>
+      </header>
+
+      <main className="relative z-10 mx-auto flex w-full max-w-[820px] flex-1 flex-col items-center justify-center gap-6 px-6 py-16 text-center">
+        <p className="eyebrow text-rosa-400">{t["portada.hero.eslogan"]}</p>
+
+        <h1 className="text-[40px] leading-[1.08] text-pretty text-crema-50 sm:text-[56px] md:text-[80px] md:leading-[1.06]">
+          {t["portada.hero.titulo"]}
+        </h1>
+
+        <p className="max-w-[560px] text-base leading-[1.7] text-lavanda-100/80 md:text-lg">
+          {t["portada.hero.cuerpo"]}
+        </p>
+
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-3.5">
+          <Link
+            href="/ingresar"
+            className="rounded-full bg-oro-500 px-7 py-3.5 font-semibold text-violeta-600 transition hover:-translate-y-0.5 hover:bg-oro-400 active:scale-[0.97]"
+          >
+            {t["portada.hero.boton"]}
+          </Link>
+          <Link
+            href="/privacidad"
+            className="rounded-full border border-lavanda-100/25 px-7 py-3.5 text-crema-50 transition hover:border-crema-50 hover:bg-crema-50/10 active:scale-[0.97]"
+          >
+            {t["portada.hero.boton_secundario"]}
+          </Link>
+        </div>
+      </main>
+
+      <footer className="relative z-10 px-6 pb-10 text-center text-[13px] text-lavanda-100/60">
+        {t["portada.hero.pie"]}{" "}
+        <Link href="/privacidad" className="text-rosa-400 hover:underline">
+          {t["portada.hero.pie_enlace"]}
+        </Link>
+      </footer>
+    </div>
+  );
+}
 
 /**
  * Secciones del landing (handoff 2.1 a 2.6).
@@ -24,34 +151,33 @@ function Paisaje({ tono }: { tono: string }) {
   );
 }
 
-export function ComoFunciona() {
+export function ComoFunciona({ t }: { t: Textos }) {
   const pasos = [
     {
       n: "01",
-      titulo: "Lees tus afirmaciones",
-      cuerpo:
-        "Escribes las tuyas o eliges de nuestras listas. Después las lees en voz alta una sola vez.",
+      titulo: t["portada.paso1.titulo"],
+      cuerpo: t["portada.paso1.cuerpo"],
     },
     {
       n: "02",
-      titulo: "Eliges tu ambiente",
-      cuerpo:
-        "Dejamos tu voz sonando a estudio y la mezclamos con lluvia, río o mar, al volumen que tú quieras.",
+      titulo: t["portada.paso2.titulo"],
+      cuerpo: t["portada.paso2.cuerpo"],
     },
     {
       n: "03",
-      titulo: "Lo escuchas cuando quieras",
-      cuerpo:
-        "Queda en tu biblioteca. Al despertar, antes de dormir o cuando necesites acordarte de quién eres.",
+      titulo: t["portada.paso3.titulo"],
+      cuerpo: t["portada.paso3.cuerpo"],
     },
   ];
 
   return (
     <section className="mx-auto w-full max-w-[1180px] px-6 py-20 md:px-20 md:py-24">
       <div className="flex flex-col items-center gap-4 text-center">
-        <p className="eyebrow text-rosa-400">Cómo funciona</p>
+        <p className="eyebrow text-rosa-400">
+          {t["portada.como_funciona.etiqueta"]}
+        </p>
         <h2 className="display text-[32px] leading-[1.15] text-crema-50 md:text-[48px]">
-          Tres pasos y ya es tuyo.
+          {t["portada.como_funciona.titulo"]}
         </h2>
       </div>
 
@@ -73,40 +199,40 @@ export function ComoFunciona() {
   );
 }
 
-export function Ambientes() {
-  const ambientes = [
-    {
-      nombre: "Lluvia",
-      para: "Para dormir y soltar el día",
-      tono:
-        "radial-gradient(90% 70% at 50% 20%, rgba(107,63,160,0.55) 0%, rgba(26,14,46,0) 70%)",
-    },
-    {
-      nombre: "Río",
-      para: "Para concentrarte y avanzar",
-      tono:
-        "radial-gradient(90% 70% at 50% 20%, rgba(126,209,193,0.35) 0%, rgba(26,14,46,0) 70%)",
-    },
-    {
-      nombre: "Mar",
-      para: "Para empezar la mañana",
-      tono:
-        "radial-gradient(90% 70% at 50% 20%, rgba(216,139,200,0.35) 0%, rgba(26,14,46,0) 70%)",
-    },
-  ];
+/**
+ * Los degradados van por posición, no por nombre de familia: así entran
+ * familias nuevas sin tocar nada. Se repiten en cuanto pasan de cuatro.
+ */
+const TONOS = [
+  "radial-gradient(90% 70% at 50% 20%, rgba(107,63,160,0.55) 0%, rgba(26,14,46,0) 70%)",
+  "radial-gradient(90% 70% at 50% 20%, rgba(126,209,193,0.35) 0%, rgba(26,14,46,0) 70%)",
+  "radial-gradient(90% 70% at 50% 20%, rgba(216,139,200,0.35) 0%, rgba(26,14,46,0) 70%)",
+  "radial-gradient(90% 70% at 50% 20%, rgba(232,181,74,0.30) 0%, rgba(26,14,46,0) 70%)",
+];
+
+/**
+ * Las familias salen de la base, no de una lista escrita aquí.
+ *
+ * Con la lista a mano, la portada prometía "Lluvia, Río y Mar" mientras el
+ * panel ya tenía otros ambientes cargados: nadie se acordaba de venir a
+ * cambiar este archivo. Ahora subir una familia desde el panel la anuncia
+ * sola, y quitarla la retira.
+ */
+export function Ambientes({ familias }: { familias: FamiliaConAmbientes[] }) {
+  if (familias.length === 0) return null;
 
   return (
     <section className="mx-auto w-full max-w-[1180px] px-6 pb-20 md:px-20 md:pb-24">
       <div className="grid gap-6 md:grid-cols-3">
-        {ambientes.map((a) => (
+        {familias.map((f, i) => (
           <div
-            key={a.nombre}
+            key={f.slug}
             className="relative h-[300px] overflow-hidden rounded-[22px]"
           >
-            <Paisaje tono={a.tono} />
+            <Paisaje tono={TONOS[i % TONOS.length]} />
             <div className="absolute bottom-6 left-[26px]">
-              <p className="display text-[28px] text-crema-50">{a.nombre}</p>
-              <p className="text-[13px] text-lavanda-100/75">{a.para}</p>
+              <p className="display text-[28px] text-crema-50">{f.nombre}</p>
+              <p className="text-[13px] text-lavanda-100/75">{f.descripcion}</p>
             </div>
           </div>
         ))}
@@ -115,44 +241,41 @@ export function Ambientes() {
   );
 }
 
-export function Privacidad() {
+export function Privacidad({ t }: { t: Textos }) {
   return (
     <section className="border-y border-lavanda-100/10 bg-violeta-800">
       <div className="mx-auto grid w-full max-w-[1180px] gap-12 px-6 py-20 md:grid-cols-2 md:gap-[70px] md:px-20 md:py-[90px]">
         <div className="flex flex-col gap-5">
-          <p className="eyebrow text-menta-400">Tu voz es tuya</p>
+          <p className="eyebrow text-menta-400">
+            {t["portada.privacidad.etiqueta"]}
+          </p>
           <h2 className="display text-[30px] leading-[1.15] text-crema-50 md:text-[44px]">
-            Nadie va a oír tu audio. Nunca.
+            {t["portada.privacidad.titulo"]}
           </h2>
           <p className="text-base leading-[1.8] text-lavanda-100/78">
-            Tu grabación se guarda para ti y no sale de la app. No se comparte,
-            no se publica, no se usa para entrenar nada y no se vende a nadie.
-            Si borras un audio, se borra.
+            {t["portada.privacidad.cuerpo"]}
           </p>
           <Link href="/privacidad" className="text-[15px] text-menta-400 hover:underline">
-            Leer la política de privacidad →
+            {t["portada.privacidad.enlace"]}
           </Link>
         </div>
 
         <div className="flex flex-col gap-4">
           <div className="rounded-[18px] border border-menta-400/30 bg-menta-400/8 px-6 py-[22px]">
             <h3 className="display text-[19px] text-crema-50">
-              «Me da vergüenza oír mi voz»
+              {t["portada.privacidad.duda1.titulo"]}
             </h3>
             <p className="mt-2 text-[15px] leading-[1.7] text-lavanda-100/78">
-              Es lo más normal los primeros segundos. A los tres días deja de
-              sonar raro y empieza a sonar como alguien en quien confías. Y
-              nadie más la va a escuchar.
+              {t["portada.privacidad.duda1.cuerpo"]}
             </p>
           </div>
 
           <div className="rounded-[18px] border border-lavanda-100/15 bg-white/5 px-6 py-[22px]">
             <h3 className="display text-[19px] text-crema-50">
-              «¿Y si no me gusta cómo suena?»
+              {t["portada.privacidad.duda2.titulo"]}
             </h3>
             <p className="mt-2 text-[15px] leading-[1.7] text-lavanda-100/78">
-              Puedes volver a grabar cuantas veces quieras. Lo que subes se
-              queda solo hasta que decidas borrarlo.
+              {t["portada.privacidad.duda2.cuerpo"]}
             </p>
           </div>
         </div>
@@ -161,7 +284,20 @@ export function Privacidad() {
   );
 }
 
-export function Precios() {
+/**
+ * La tabla de precios NO se edita desde el panel, a propósito: sus viñetas
+ * describen límites reales (cuántos audios, cuántos minutos, qué ambientes).
+ * Si se pudieran escribir a mano, alguien podría prometer cinco audios gratis
+ * cuando el límite es uno, y la pantalla mentiría sin que nadie lo note.
+ *
+ * Por eso los números salen de `lib/planes` y los ambientes de la base.
+ */
+export function Precios({ familias }: { familias: FamiliaConAmbientes[] }) {
+  const nombresFamilias = familias.map((f) => f.nombre);
+  const gratis = familias
+    .filter((f) => f.ambientes.some((a) => a.gratis))
+    .map((f) => f.nombre);
+
   const planes = [
     {
       nombre: "Gratis",
@@ -170,7 +306,9 @@ export function Precios() {
       incluye: [
         `${LIMITES.gratis.audios} audio guardado`,
         `Hasta ${LIMITES.gratis.segundos / 60} minuto de grabación`,
-        "Ambiente lluvia",
+        gratis.length > 0
+          ? `Ambiente ${gratis.join(" y ")}`
+          : "Un ambiente para empezar",
         "Tus afirmaciones escritas por ti",
       ],
       cta: "Grabar mi voz",
@@ -183,7 +321,9 @@ export function Precios() {
       incluye: [
         "Audios ilimitados",
         `Hasta ${LIMITES.premium.segundos / 60} minutos por grabación`,
-        "Lluvia, río y mar",
+        nombresFamilias.length > 0
+          ? nombresFamilias.join(", ")
+          : "Todos los ambientes",
         "Descargas para oír sin internet",
       ],
       cta: "Empezar Premium",
@@ -262,33 +402,33 @@ export function Precios() {
   );
 }
 
-export function Cierre() {
+export function Cierre({ t }: { t: Textos }) {
   return (
     <section className="relative flex h-[420px] items-center justify-center overflow-hidden">
       <Paisaje tono="radial-gradient(80% 80% at 50% 40%, rgba(107,63,160,0.5) 0%, rgba(26,14,46,0) 70%)" />
       <div className="relative z-10 flex max-w-[700px] flex-col items-center gap-8 px-6 text-center">
         <h2 className="display text-[30px] leading-[1.12] text-crema-50 md:text-[52px]">
-          La voz que más escuchas es la tuya. Que diga algo bueno.
+          {t["portada.cierre.titulo"]}
         </h2>
         <Link
           href="/ingresar"
           className="rounded-full bg-oro-500 px-7 py-3.5 font-semibold text-violeta-600 transition hover:-translate-y-0.5 hover:bg-oro-400"
         >
-          Grabar mi voz
+          {t["portada.cierre.boton"]}
         </Link>
       </div>
     </section>
   );
 }
 
-export function Pie() {
+export function Pie({ t }: { t: Textos }) {
   return (
     <footer className="border-t border-lavanda-100/10">
       <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-4 px-6 py-8 text-[13px] text-lavanda-100/55 sm:flex-row sm:items-center sm:justify-between md:px-20">
         <span className="display text-[17px] text-crema-50">Míntara</span>
         <div className="flex gap-7">
           <Link href="/privacidad" className="hover:text-crema-50">
-            Privacidad
+            {t["portada.pie.privacidad"]}
           </Link>
           <a
             href="https://wa.me/593983745757"
@@ -296,7 +436,7 @@ export function Pie() {
             target="_blank"
             rel="noreferrer"
           >
-            Ayuda por WhatsApp
+            {t["portada.pie.ayuda"]}
           </a>
         </div>
       </div>

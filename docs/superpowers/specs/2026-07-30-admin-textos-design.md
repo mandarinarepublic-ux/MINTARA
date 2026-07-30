@@ -1,7 +1,15 @@
 # Editar los textos de MÍNTARA desde el panel
 
 **Fecha:** 30 de julio de 2026
-**Estado:** diseño aprobado, pendiente de plan de implementación
+**Estado:** ✅ implementado y desplegado el 30-jul-2026.
+
+Dos cosas cambiaron al construirlo, y quedan anotadas en su sitio más abajo:
+
+1. La tabla se llama **`textos_pantalla`**, no `textos`: `voz.textos` ya existía y guarda
+   las afirmaciones que cada persona escribe para grabar.
+2. La sección de ambientes de la portada **lee la base**, como proponía el punto abierto.
+   Se confirmó que hacía falta: las familias reales son «Para dormir», «Para concentrarte» y
+   «Para empezar el día», y la portada seguía anunciando Lluvia, Río y Mar.
 
 ---
 
@@ -53,7 +61,7 @@ Tres tablas nuevas en el schema `voz`, siguiendo el patrón de `familias` y `amb
 
 | Tabla | Para qué | Columnas |
 |---|---|---|
-| `textos` | Textos sueltos de pantalla | `clave` (PK), `valor`, `valor_anterior`, `actualizado_en` |
+| `textos_pantalla` | Textos sueltos de pantalla | `clave` (PK), `valor`, `valor_anterior`, `actualizado_en` |
 | `paquetes` | Las listas de afirmaciones | `id` (PK), `nombre`, `descripcion`, `orden`, `activo` |
 | `frases` | Las frases de cada lista | `id` (PK), `paquete` (FK), `texto`, `orden` |
 
@@ -193,15 +201,18 @@ Las 110 pruebas actuales siguen pasando.
 - Historial largo de versiones: una sola versión anterior por texto
 - Traducciones a otros idiomas
 
-## Punto a resolver en la implementación
+## La sección de ambientes de la portada — resuelto
 
-**La sección de ambientes de la portada.** Hoy lista "Lluvia, Río, Mar" a mano, y por eso está
-desactualizada. Convertirla en texto editable arregla el síntoma pero deja la trampa puesta:
-volvería a desfasarse en cuanto se suba un ambiente nuevo.
+Listaba "Lluvia, Río, Mar" a mano. Convertirla en texto editable habría arreglado el síntoma
+dejando la trampa puesta: volvería a desfasarse en cuanto se subiera un ambiente nuevo.
 
-La propuesta es que esa sección **lea los ambientes reales de la base** en vez de ser texto
-suelto, de modo que se mantenga sola. Queda por confirmar con Rodrigo, porque cambia lo que la
-portada muestra hoy.
+**Ahora lee la base.** Al implementarlo se confirmó lo grave que era: las familias reales son
+«Para dormir», «Para concentrarte» y «Para empezar el día», ninguna de las tres que anunciaba.
+La misma corrección se aplicó a la viñeta de la tabla de precios, que también decía "Lluvia,
+río y mar".
+
+Como los degradados iban atados a esas tres tarjetas, ahora se asignan por posición y se
+repiten a partir de la cuarta familia, de modo que entren familias nuevas sin tocar código.
 
 ## Archivos que se tocan
 

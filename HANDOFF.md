@@ -97,8 +97,28 @@ sonar (por eso sigue sonando con la pantalla apagada y aparece en la pantalla de
   y una **nota grave** opcional.
 - Se respetan los **silencios reales** de la grabación (tope de 6 s).
 
-**Panel de administración** (`/admin`, solo rol admin): subir ambientes, editarlos, moverlos de
-familia, ordenarlos, marcarlos visibles o gratis, y editar las familias.
+**Panel de administración** (`/admin`, solo rol admin). Tres pestañas:
+
+- **Textos** — todos los textos que lee el cliente (portada, entrar, consentimiento, elegir
+  afirmaciones, premium), con una **ventana que muestra cómo queda mientras escribes** y un
+  ↩ *volver a como estaba* por texto. Lo que guardas sale en la app al instante.
+- **Afirmaciones** — las listas que el cliente elige antes de grabar: editar, agregar, quitar,
+  reordenar y crear listas nuevas.
+- **Ambientes** — lo de siempre: subirlos, editarlos, moverlos de familia, ordenarlos y
+  marcarlos visibles o gratis.
+
+**Lo que hace fiel la previsualización:** pinta *los mismos componentes* que ve el cliente,
+alimentados con lo que estás escribiendo. Por eso las pantallas reciben sus textos como datos
+(`t["portada.hero.titulo"]`) en vez de tenerlos incrustados. Si el panel dibujara su propia
+versión, se separaría de la realidad con el primer cambio de diseño.
+
+**La red de seguridad:** en `src/lib/textos/catalogo.ts` está el texto original de cada clave.
+Lo guardado en la base gana; lo que falte sale de ahí. Así la app **nunca muestra un hueco**,
+aunque la base no responda o alguien borre una fila. Lo mismo con las afirmaciones: si la tabla
+está vacía, se usan las cinco listas de `paquetes.ts`.
+
+⚠️ **La tabla se llama `voz.textos_pantalla`, no `voz.textos`** — esa última ya existía y es
+otra cosa: ahí se guardan las afirmaciones que cada persona escribe para grabar.
 
 **Ambientes cargados:** Lluvia y Moscos (dormir) · Tibet y Aire (concentrarte) · Montaña
 (empezar el día). ⚠️ **Moscos dura 26 s** y el bucle se nota; los demás rondan el minuto.
@@ -107,6 +127,9 @@ familia, ordenarlos, marcarlos visibles o gratis, y editar las familias.
 
 ## Pendientes
 
+0. **Traer las listas de afirmaciones a la base.** En `/admin/afirmaciones` hay un botón que lo
+   hace de una. Hasta que lo aprietes, la app usa las cinco del código y esa pantalla no tiene
+   nada que editar. El cliente no nota ninguna diferencia: son las mismas.
 1. **Las 6 fotografías del diseño.** Hoy hay degradados de marca en su lugar (hero, ambientes,
    cierre). Cambiarlas es sustituir un componente, sin tocar el resto.
 2. **Icono de la app** para el manifiesto (falta decidir el arte definitivo).
