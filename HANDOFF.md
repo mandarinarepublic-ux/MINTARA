@@ -143,7 +143,15 @@ prender la computadora.
 
 1. Abres Claude Code en el celular (app de Claude → Code, o `claude.ai/code`) y pides el ajuste
 2. Claude trabaja en una **rama** y abre un **PR**. No commitea a `main`
-3. Vercel construye un **Preview** de ese PR y deja la URL en el propio PR
+3. Vercel construye un **Preview** de ese PR y deja la URL en el propio PR. Cada rama tiene
+   además una URL fija y predecible que **no cambia** aunque Claude siga subiendo cambios:
+
+   ```
+   https://mintara-git-<nombre-de-la-rama>-mandarinarepublic-6819s-projects.vercel.app
+   ```
+
+   Esa es la que conviene guardar en el teléfono mientras revisas un PR: la URL suelta del
+   despliegue cambia con cada push y te haría pedir el código de WhatsApp otra vez.
 4. Abres esa URL en el teléfono y **oyes** el cambio
 5. Si te gusta, apruebas el merge desde el celular. Al entrar a `main`, Vercel publica en
    `mintara-app.vercel.app`
